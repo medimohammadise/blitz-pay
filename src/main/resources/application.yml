@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: quickpay
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/quickpay_db}
+    driver-class-name: org.postgresql.Driver
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate.connection.isolation: 2
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  hikari:
+    maximum-pool-size: 10
+    minimum-idle: 10
+    auto-commit: true
+    pool-name: HikariPool-1
+  threads:
+    virtual:
+      enabled: true
+
+server:
+  tomcat:
+    max-threads: 50
+management:
+  endpoints:
+    web:
+      exposure:
+        include: metrics,health
+  endpoint:
+    metrics:
+      enabled: true
+truelayer:
+  apiBase: ${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}
+  accessToken: ${TRUELAYER_ACCESS_TOKEN:dummy-access-token}
+  webhookJku: ${TRUELAYER_WEBHOOK_JKU:http://localhost:8080/.well-known/jwks.json}
+  # SDK configuration
+  clientId: ${TRUELAYER_CLIENT_ID}
+  clientSecret: ${TRUELAYER_CLIENT_SECRET}
+  keyId: ${TRUELAYER_KEY_ID}
+  privateKeyPath: ${TRUELAYER_PRIVATE_KEY_PATH}
+  environment: ${TRUELAYER_ENV:sandbox}
+  httpLogs: ${TRUELAYER_HTTP_LOGS:false}
+  merchantAccountId: ${TRUELAYER_MERCHANT_ACCOUNT_ID}
