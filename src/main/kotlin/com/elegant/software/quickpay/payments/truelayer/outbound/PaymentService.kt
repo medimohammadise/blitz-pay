@@ -1,6 +1,7 @@
 package com.elegant.software.quickpay.payments.truelayer.outbound
 
-import com.elegant.software.quickpay.payments.truelayer.api.PaymentGateway
+import com.elegant.software.quickpay.payments.truelayer.api.PaymentRequested
+import com.elegant.software.quickpay.payments.truelayer.api.PaymentResult
 import com.elegant.software.quickpay.payments.truelayer.support.TrueLayerProperties
 import com.truelayer.java.TrueLayerClient
 import com.truelayer.java.entities.CurrencyCode
@@ -8,13 +9,15 @@ import com.truelayer.java.entities.ProviderFilter
 import com.truelayer.java.entities.User
 import com.truelayer.java.http.entities.ApiResponse
 import com.truelayer.java.payments.entities.*
+import com.truelayer.java.payments.entities.beneficiary.MerchantAccount
 import com.truelayer.java.payments.entities.paymentmethod.PaymentMethod
+import com.truelayer.java.payments.entities.providerselection.ProviderSelection
 import org.slf4j.LoggerFactory
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
+import java.net.URI
+import java.util.*
 import java.util.concurrent.CompletableFuture
-import com.truelayer.java.payments.entities.beneficiary.MerchantAccount;
-import com.truelayer.java.payments.entities.providerselection.ProviderSelection;
-import java.util.Collections
 
 /**
  * TrueLayer payment gateway adapter.
@@ -27,19 +30,20 @@ import java.util.Collections
  * This can be swapped later with the official TrueLayer Java SDK call, using the
  * same fields assembled below.
  */
+@EnableConfigurationProperties(TrueLayerProperties::class)
 @Component
 class PaymentService(
     private val trueLayerProperties: TrueLayerProperties,
     private val trueLayerClient: TrueLayerClient
-) : PaymentGateway {
+)  {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    override fun startPayment(cmd: PaymentGateway.PaymentRequested): String {
+    fun startPayment(paymentRequest: PaymentRequested): PaymentResult {
         // Adapt types for SDK requirements
-        val amountInMinor = cmd.amountMinorUnits.toInt() // SDK likely expects Int
-        val currency = CurrencyCode.valueOf(cmd.currency.uppercase()) // Use SDK's CurrencyCode enum
-        val paymentRequest = CreatePaymentRequest.builder()
+        val amountInMinor = paymentRequest.amountMinorUnits.toInt() // SDK likely expects Int
+        val currency = CurrencyCode.valueOf(paymentRequest.currency.uppercase()) // Use SDK's CurrencyCode enum
+        val createTrueLayerPaymentRequest = CreatePaymentRequest.builder()
             .amountInMinor(amountInMinor)
             .currency(currency)
             .paymentMethod(
@@ -76,28 +80,44 @@ class PaymentService(
         // fire the request
         val paymentResponse: CompletableFuture<ApiResponse<CreatePaymentResponse?>?> = trueLayerClient
             .payments()
-            .createPayment(paymentRequest)
+            .createPayment(createTrueLayerPaymentRequest)
 
         // wait for the response
         val apiResponse = paymentResponse.get()
-        if (apiResponse == null) {
-            log.error("TrueLayer payment API response was null")
-            throw IllegalStateException("Payment API response was null")
+        fun verifyResult(): PaymentResult {
+            if (apiResponse == null) {
+                log.error("TrueLayer payment API response was null for order {}", paymentRequest.orderId)
+                return PaymentResult(
+                    orderId = paymentRequest.orderId,
+                    error = "TrueLayer payment API response was null"
+                )
+            }
+            if (apiResponse.error != null) {
+                log.error(
+                    "TrueLayer payment API call failed for order {} with response {}",
+                    paymentRequest.orderId,
+                    apiResponse.error
+                )
+                return PaymentResult(orderId = paymentRequest.orderId, error = apiResponse.error.toString())
+            }
+            val paymentData = apiResponse.data
+            if (paymentData == null) {
+                log.error("TrueLayer payment API response data was null for order {}", paymentRequest.orderId)
+                return PaymentResult(orderId = paymentRequest.orderId, error = "Payment API response data was null")
+            }
+            val paymentId = paymentData.id
+            if (paymentId == null) {
+                log.error("TrueLayer payment ID was null in response for the order {}", paymentRequest.orderId)
+                return PaymentResult(orderId = paymentRequest.orderId, error = "Payment ID was null in response")
+            }
+            val redirectURI =
+                trueLayerClient.hppLinkBuilder().returnUri(URI.create("https://console.truelayer.com/redirect-page"))
+                    .resourceToken(paymentData.resourceToken)
+                    .resourceId(paymentId)
+                    .build()
+            return PaymentResult(orderId = paymentRequest.orderId, paymentId = paymentId, redirectURI = redirectURI)
         }
-        if (apiResponse.error != null) {
-            log.error("TrueLayer payment API call failed: {}", apiResponse.error)
-            throw IllegalStateException("Payment API call failed: ${apiResponse.error}")
-        }
-        val paymentData = apiResponse.data
-        if (paymentData == null) {
-            log.error("TrueLayer payment API response data was null")
-            throw IllegalStateException("Payment API response data was null")
-        }
-        val paymentId = paymentData.id
-        if (paymentId == null) {
-            log.error("TrueLayer payment ID was null in response")
-            throw IllegalStateException("Payment ID was null in response")
-        }
-        return paymentId
+
+        return verifyResult()
     }
 }

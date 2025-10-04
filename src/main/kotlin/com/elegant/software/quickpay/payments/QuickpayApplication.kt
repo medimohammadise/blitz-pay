@@ -1,4 +1,4 @@
-package com.elegant.software.quickpay.payments.truelayer
+package com.elegant.software.quickpay.payments
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication

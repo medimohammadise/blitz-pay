@@ -6,8 +6,8 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
-@RestController
-@RequestMapping("/webhooks/truelayer")
+//@RestController
+//@RequestMapping("/webhooks/truelayer")
 class TrueLayerWebhookController(
     private val verifier: TlSignatureVerifier,
     private val publisher: ApplicationEventPublisher

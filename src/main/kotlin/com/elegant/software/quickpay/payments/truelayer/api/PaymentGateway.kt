@@ -1,10 +1,9 @@
 package com.elegant.software.quickpay.payments.truelayer.api
-
+import com.truelayer.java.payments.entities.paymentdetail.Status
 import org.springframework.modulith.NamedInterface
+import java.net.URI
 
 @NamedInterface("PaymentGateway")
-interface PaymentGateway {
-    fun startPayment(cmd: PaymentRequested): String
 
     data class PaymentRequested(
         val orderId: String,
@@ -13,4 +12,10 @@ interface PaymentGateway {
         val userDisplayName: String,
         val redirectReturnUri: String
     )
-}
+    data class PaymentResult(
+        val orderId: String,
+        val paymentId: String? = null,
+        val redirectURI: URI? = null,
+        val status: Status? = null,
+        val error: String? = null
+        )

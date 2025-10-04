@@ -1,5 +1,6 @@
 package com.elegant.software.quickpay.payments.truelayer.api // <- adjust to your module's base package
 
+import com.elegant.software.quickpay.payments.truelayer.outbound.PaymentService
 import com.elegant.software.quickpay.payments.truelayer.support.TrueLayerProperties
 import com.truelayer.java.TrueLayerClient
 import org.assertj.core.api.Assertions.assertThat
@@ -19,7 +20,7 @@ import org.springframework.modulith.test.Scenario
 class TrueLayerPaymentStarterTests {
 
     @Autowired
-    lateinit var gateway: PaymentGateway
+    lateinit var gateway: PaymentService
 
     @MockBean
     lateinit var trueLayerClient: TrueLayerClient
@@ -36,7 +37,7 @@ class TrueLayerPaymentStarterTests {
     fun `listener calls gateway with mapped StartPaymentCommand`(scenario: Scenario) {
         stubGateway()
 
-        val event = PaymentGateway.PaymentRequested(
+        val event = PaymentRequested(
             orderId = "order-42",
             amountMinorUnits = 12_34,     // e.g., 12.34 in minor units
             currency = "EUR",
@@ -56,7 +57,7 @@ class TrueLayerPaymentStarterTests {
                 assertThat(callCount).isEqualTo(1)
 
                 // Capture and assert the exact command mapped by the listener
-                val cmdCaptor = argumentCaptor<PaymentGateway.PaymentRequested>()
+                val cmdCaptor = argumentCaptor<PaymentRequested>()
                 verify(gateway).startPayment(cmdCaptor.capture())
 
                 val cmd = cmdCaptor.firstValue

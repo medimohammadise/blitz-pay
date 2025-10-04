@@ -15,7 +15,7 @@
  */
 package org.springsource.restbucks
 
-import com.elegant.software.quickpay.payments.truelayer.QuickpayApplication
+import com.elegant.software.quickpay.payments.QuickpayApplication
 import mu.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.springframework.modulith.core.ApplicationModules

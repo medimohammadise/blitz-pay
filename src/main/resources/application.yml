@@ -35,6 +35,8 @@ management:
   endpoint:
     metrics:
       enabled: true
+springdoc:
+  show-actuator: true
 truelayer:
   apiBase: ${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}
   accessToken: ${TRUELAYER_ACCESS_TOKEN:dummy-access-token}

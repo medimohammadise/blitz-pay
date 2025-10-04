@@ -1,5 +1,5 @@
 plugins {
-	kotlin("jvm") version "1.9.25"
+	kotlin("jvm") version "2.0.21"
 	kotlin("plugin.spring") version "1.9.25"
 	id("org.springframework.boot") version "3.5.6"
 	id("io.spring.dependency-management") version "1.1.7"
@@ -29,15 +29,21 @@ dependencies {
 	implementation("org.springframework.modulith:spring-modulith-starter-core")
 	implementation("org.springframework.modulith:spring-modulith-starter-jpa")
 	implementation("org.postgresql:postgresql:${property("postgresqlVersion")}")
-    implementation ("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("org.springframework.modulith:spring-modulith-actuator")
+    // Optional: observability & runtime insights
+    runtimeOnly("org.springframework.modulith:spring-modulith-starter-insight")
+
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.nimbusds:nimbus-jose-jwt:9.37")
     // TrueLayer Java SDK
     implementation("com.truelayer:truelayer-java:17.4.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
+    // Spring Boot DevTools for hot reload (active only in development)
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+
     // Spring Boot’s Testcontainers support (provides @ServiceConnection)
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.3"))
