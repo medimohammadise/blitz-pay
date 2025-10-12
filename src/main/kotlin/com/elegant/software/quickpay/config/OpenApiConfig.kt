@@ -53,7 +53,6 @@ class OpenApiConfig {
     fun paymentsGroup(): GroupedOpenApi =
         GroupedOpenApi.builder()
             .group("payments")
-            // adjust to your controllers' paths
             .pathsToMatch("/payments/**")
             .build()
 
