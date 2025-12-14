@@ -72,11 +72,10 @@ truelayer:
 # LOGGING MUST BE AT ROOT LEVEL, not under qr.server!
 logging:
   level:
-    com.elegant.software.quickpay: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    com.elegant.software.quickpay.api.inbound: TRACE
-    com.elegant.software.quickpay.payments.truelayer.inbound: TRACE
+    de.elegantsoftware.blitzpay: DEBUG
+    de.elegantsoftware.blitzpay.api.inbound: TRACE
+    de.elegantsoftware.blitzpay.truelayer.inbound: TRACE
+
   pattern:
     console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
   file:

@@ -7,7 +7,7 @@ plugins {
 	id("org.sonarqube") version "5.1.0.4882"
 }
 
-group = "com.elegant-software.quickpay"
+group = "com.elegantsoftware.blitzpay"
 version = "0.0.1-SNAPSHOT"
 description = "EU Qrcode payment"
 
