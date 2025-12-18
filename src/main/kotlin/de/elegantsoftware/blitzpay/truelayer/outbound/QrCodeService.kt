@@ -244,7 +244,7 @@ class QrPaymentService(
                     name = item,
                     priceInMinor = totalAmountInMinor,
                     quantity = 1,
-                    url = "https://your-coffee-shop.com/menu/${item.toLowerCase().replace(" ", "-")}"
+                    url = "https://your-coffee-shop.com/menu/${item.lowercase().replace(" ", "-")}"
                 )
             )
         } else {
@@ -261,7 +261,7 @@ class QrPaymentService(
                         name = itemName,
                         priceInMinor = pricePerItem,
                         quantity = quantity,
-                        url = "https://your-coffee-shop.com/menu/${itemName.toLowerCase().replace(" ", "-")}"
+                        url = "https://your-coffee-shop.com/menu/${itemName.lowercase().replace(" ", "-")}"
                     )
                 )
 
@@ -290,7 +290,7 @@ class QrPaymentService(
         }
 
         // Otherwise use predefined prices
-        val unitPrice = when (itemName.toLowerCase()) {
+        val unitPrice = when (itemName.lowercase()) {
             "latte" -> 400L // £4.00
             "cappuccino" -> 350L // £3.50
             "espresso" -> 250L // £2.50

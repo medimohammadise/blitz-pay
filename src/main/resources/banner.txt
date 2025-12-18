@@ -1,0 +1,10 @@
+
+===============================================================
+                      BLITZPAY
+          European QR Code Payment Platform
+===============================================================
+Version: 1.0.0
+Spring Boot: ${spring-boot.version}
+Profile: ${spring.profiles.active:default}
+API Docs: http://localhost:${server.port}/swagger-ui.html
+===============================================================

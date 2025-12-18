@@ -2,6 +2,7 @@ package de.elegantsoftware.blitzpay.truelayer.inbound
 
 import de.elegantsoftware.blitzpay.truelayer.api.QrPaymentRequest
 import de.elegantsoftware.blitzpay.truelayer.outbound.QrPaymentService
+import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -11,6 +12,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/qr-payments")
+@Tag(name = "QR for payments", description = "APIs to create QR for payments ")
 class QrCodeController(
     private val qrPaymentService: QrPaymentService
 ) {

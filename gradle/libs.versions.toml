@@ -1,0 +1,83 @@
+[versions]
+kotlin = "2.3.0"
+spring-boot = "4.0.0"
+spring-dependency-management = "1.1.7"
+spring-modulith = "2.0.0"
+postgresql = "42.7.8"
+sonarqube = "5.1.0.4882"
+
+# Dependencies
+truelayer-java = "17.4.0"
+truelayer-signing = "0.2.6"
+springdoc-openapi = "3.0.0"
+nimbus-jose-jwt = "10.6"
+zxing-core = "3.5.4"
+zxing-javase = "3.5.4"
+kotlin-logging = "3.0.5"
+mockito-kotlin = "6.1.0"
+flyway = "11.19.0"
+
+# Test
+testcontainers = "1.21.4"
+junit-platform = "6.0.0"
+
+[libraries]
+# Spring Boot
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+spring-boot-devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring-boot" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers", version.ref = "spring-boot" }
+
+# Spring Modulith
+spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core", version.ref = "spring-modulith" }
+spring-modulith-starter-jpa = { module = "org.springframework.modulith:spring-modulith-starter-jpa", version.ref = "spring-modulith" }
+spring-modulith-actuator = { module = "org.springframework.modulith:spring-modulith-actuator", version.ref = "spring-modulith" }
+spring-modulith-starter-insight = { module = "org.springframework.modulith:spring-modulith-starter-insight", version.ref = "spring-modulith" }
+spring-modulith-starter-test = { module = "org.springframework.modulith:spring-modulith-starter-test", version.ref = "spring-modulith" }
+
+# Database
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+
+# Flyway - NEW
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# Jackson
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version = "2.18.3" } # Managed by Spring Boot
+
+# Kotlin
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+
+# TrueLayer
+truelayer-java = { module = "com.truelayer:truelayer-java", version.ref = "truelayer-java" }
+truelayer-signing = { module = "com.truelayer:truelayer-signing", version.ref = "truelayer-signing" }
+
+# SpringDoc
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc-openapi" }
+
+# JWT
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose-jwt" }
+
+# QR Code
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing-core" }
+zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing-javase" }
+
+# Logging
+kotlin-logging-jvm = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+
+# Test
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-plugin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+kotlin-plugin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+flyway = { id = "org.flywaydb.flyway", version.ref = "flyway" }

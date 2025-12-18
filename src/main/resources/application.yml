@@ -1,6 +1,12 @@
 spring:
   application:
-    name: quickpay
+    name: blitzpay
+  banner:
+    location: classpath:banner.txt
+    charset: UTF-8
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   datasource:
     url: '${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/quickpay_db}'
     driver-class-name: org.postgresql.Driver
@@ -16,6 +22,22 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+    baseline-version: 1
+    validate-on-migrate: true
+    locations: classpath:db/migration
+    # If you want to clean DB in dev (DANGEROUS in production!)
+    clean-disabled: false  # Set to true in production!
+
+    # Schema management
+    schemas: public
+    default-schema: public
+
+    # Placeholders (optional)
+    placeholders:
+      table-prefix: ""
   hikari:
     maximum-pool-size: 10
     minimum-idle: 10
@@ -52,12 +74,25 @@ management:
 
 springdoc:
   api-docs:
-    path: /v3/api-docs
+    path: /api-docs
+    enabled: true
   swagger-ui:
     path: /swagger-ui.html
+    enabled: true
+    url: /api-docs
+    config-url: /api-docs/swagger-config
     operations-sorter: method
     tags-sorter: alpha
+    display-request-duration: true
+    try-it-out-enabled: true
+    persist-authorization: true
+    csrf:
+      enabled: true
+  packages-to-scan: de.elegantsoftware.blitzpay
+  paths-to-match: /api/**
   show-actuator: true
+  default-consumes-media-type: application/json
+  default-produces-media-type: application/json
 
 truelayer:
   apiBase: '${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}'
