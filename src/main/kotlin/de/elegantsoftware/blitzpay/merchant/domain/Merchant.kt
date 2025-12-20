@@ -1,6 +1,5 @@
 package de.elegantsoftware.blitzpay.merchant.domain
 
-import de.elegantsoftware.blitzpay.common.domain.BaseEntity
 import jakarta.persistence.*
 import java.time.LocalDateTime
 

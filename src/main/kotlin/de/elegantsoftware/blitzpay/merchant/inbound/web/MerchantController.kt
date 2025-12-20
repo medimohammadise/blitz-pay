@@ -34,12 +34,18 @@ class MerchantController(
         return merchantService.verifyMerchant(id)
     }
 
-    @PatchMapping("/{id}/settings")
+    @PutMapping("/{publicId}/settings")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun updateSettings(
-        @PathVariable id: UUID,
+        @PathVariable publicId: UUID,
         @Valid @RequestBody request: UpdateSettingsRequest
     ) {
-        merchantService.updateMerchantSettings(id, request)
+        merchantService.updateMerchantSettings(publicId, request)
+    }
+
+    @DeleteMapping("/{publicId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deactivateMerchant(@PathVariable publicId: UUID) {
+        merchantService.deactivateMerchant(publicId)
     }
 }

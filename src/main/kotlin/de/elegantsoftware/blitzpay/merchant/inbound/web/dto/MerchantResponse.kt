@@ -11,6 +11,6 @@ data class MerchantResponse(
     val status: String,
     val settings: MerchantSettingsResponse,
     val verifiedAt: LocalDateTime?,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val createdAt: LocalDateTime?,
+    val updatedAt: LocalDateTime?
 )
