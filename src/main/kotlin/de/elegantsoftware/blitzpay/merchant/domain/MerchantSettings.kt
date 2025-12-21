@@ -1,24 +1,20 @@
 package de.elegantsoftware.blitzpay.merchant.domain
 
-import jakarta.persistence.Embeddable
-
-@Embeddable
 data class MerchantSettings(
-    var webhookUrl: String? = null,
-    var qrCodeEnabled: Boolean = true,
-    var defaultCurrency: String = "EUR",
-    var settlementSchedule: SettlementSchedule = SettlementSchedule.DAILY,
-    var notificationEmail: String? = null
+    val defaultCurrency: String = "EUR",
+    val language: String = "en",
+    val notificationPreferences: NotificationPreferences = NotificationPreferences(),
+    val paymentPreferences: PaymentPreferences = PaymentPreferences()
 ) {
-    companion object {
-        fun default(): MerchantSettings = MerchantSettings()
-    }
+    data class NotificationPreferences(
+        val emailNotifications: Boolean = true,
+        val smsNotifications: Boolean = false,
+        val marketingEmails: Boolean = false
+    )
 
-    fun withWebhookUrl(url: String?): MerchantSettings = copy(webhookUrl = url)
-    fun withQrCodeEnabled(enabled: Boolean): MerchantSettings = copy(qrCodeEnabled = enabled)
-
-}
-
-enum class SettlementSchedule {
-    DAILY, WEEKLY, MONTHLY, MANUAL
+    data class PaymentPreferences(
+        val defaultPaymentMethod: String = "card",
+        val allowedCurrencies: Set<String> = setOf("EUR", "USD", "GBP"),
+        val autoSettle: Boolean = true
+    )
 }

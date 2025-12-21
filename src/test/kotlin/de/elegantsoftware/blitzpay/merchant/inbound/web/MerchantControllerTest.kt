@@ -1,7 +1,6 @@
 package de.elegantsoftware.blitzpay.merchant.inbound.web
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import de.elegantsoftware.blitzpay.merchant.api.MerchantServicePort
 import de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus
 import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.*
 import org.junit.jupiter.api.DisplayName

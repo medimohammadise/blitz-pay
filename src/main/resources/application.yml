@@ -1,4 +1,7 @@
-spring:
+modulith:
+  events:
+    publication:
+      mode: async
   application:
     name: blitzpay
   banner:

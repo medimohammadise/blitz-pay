@@ -1,0 +1,14 @@
+package de.elegantsoftware.blitzpay.product.support.exception
+
+enum class ProductErrorCode {
+    PRODUCT_NOT_FOUND,
+    PRODUCT_ALREADY_EXISTS,
+    PRODUCT_INACTIVE,
+    INVALID_PRODUCT_STATUS,
+    INSUFFICIENT_STOCK,
+    INVALID_PRICE,
+    DUPLICATE_SKU,
+    PRODUCT_VALIDATION_FAILED,
+    CATEGORY_NOT_FOUND,
+    INVENTORY_TRACKING_DISABLED
+}

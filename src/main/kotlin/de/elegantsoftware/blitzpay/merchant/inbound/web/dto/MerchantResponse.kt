@@ -4,13 +4,13 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 data class MerchantResponse(
-    val id: Long,
-    val publicId: UUID,
+    val id: UUID,
     val email: String,
     val businessName: String,
-    val status: String,
-    val settings: MerchantSettingsResponse,
-    val verifiedAt: LocalDateTime?,
-    val createdAt: LocalDateTime?,
-    val updatedAt: LocalDateTime?
+    val status: de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus,
+    val isActive: Boolean,
+    val isEmailVerified: Boolean,
+    val createdAt: LocalDateTime,
+    val updatedAt: LocalDateTime,
+    val settings: MerchantSettingsResponse? = null
 )

@@ -1,7 +1,6 @@
 package de.elegantsoftware.blitzpay.merchant.support.service
 
 import de.elegantsoftware.blitzpay.common.api.exceptions.ValidationException
-import de.elegantsoftware.blitzpay.merchant.api.MerchantEventPublisher
 import de.elegantsoftware.blitzpay.merchant.domain.*
 import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.*
 import de.elegantsoftware.blitzpay.merchant.support.exception.*

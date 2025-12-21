@@ -6,12 +6,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
 @Configuration
 @EntityScan(basePackages = [
-    "de.elegantsoftware.blitzpay.common.domain",
     "de.elegantsoftware.blitzpay.merchant.domain",
-    "de.elegantsoftware.blitzpay.sales.domain"
+    "de.elegantsoftware.blitzpay.merchant.outbound.persistence",
+    "de.elegantsoftware.blitzpay.invoice.outbound.persistence"
 ])
 @EnableJpaRepositories(basePackages = [
-    "de.elegantsoftware.blitzpay.merchant.domain",
-    "de.elegantsoftware.blitzpay.sales.domain"
+    "de.elegantsoftware.blitzpay.merchant.outbound.persistence",
+    "de.elegantsoftware.blitzpay.invoice.outbound.persistence"
 ])
 class PersistenceConfig

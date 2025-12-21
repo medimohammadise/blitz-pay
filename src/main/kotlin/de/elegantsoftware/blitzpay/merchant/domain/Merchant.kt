@@ -1,62 +1,145 @@
 package de.elegantsoftware.blitzpay.merchant.domain
 
-import jakarta.persistence.*
-import java.time.LocalDateTime
+import de.elegantsoftware.blitzpay.merchant.domain.events.MerchantRegistered
+import de.elegantsoftware.blitzpay.merchant.domain.events.MerchantVerificationEmailRequested
+import de.elegantsoftware.blitzpay.merchant.domain.events.MerchantVerified
+import org.springframework.data.domain.AbstractAggregateRoot
+import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.Instant
 
-@Entity
-@Table(name = "merchants")
 class Merchant(
-    @Column(unique = true, nullable = false)
+    val id: MerchantId,
+    val publicId: UUID,
     val email: String,
-
-    @Column(nullable = false)
     var businessName: String,
+    var settings: MerchantSettings,
+    var status: MerchantStatus,
+    var emailVerifiedAt: Instant? = null,
+    val createdAt: Instant,
+    var updatedAt: Instant
+) : AbstractAggregateRoot<Merchant>() {
 
-    @Embedded
-    var settings: MerchantSettings = MerchantSettings(),
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 50)
-    var status: MerchantStatus = MerchantStatus.PENDING_VERIFICATION,
-
-    // New field: Track verification if needed
-    @Column(name = "verified_at")
-    var verifiedAt: LocalDateTime? = null,
-
-
-) : BaseEntity() {
     companion object {
         fun create(
             email: String,
             businessName: String,
             settings: MerchantSettings = MerchantSettings()
         ): Merchant {
-            // Validate business rules before creating
             require(email.isNotBlank()) { "Email must not be blank" }
             require(businessName.isNotBlank()) { "Business name must not be blank" }
             require(email.contains("@")) { "Invalid email format" }
 
-            return Merchant(
+            val merchant = Merchant(
+                id = MerchantId(0),
+                publicId = UUID.randomUUID(),
                 email = email.trim(),
                 businessName = businessName.trim(),
                 settings = settings,
+                status = MerchantStatus.PENDING_VERIFICATION,
+                emailVerifiedAt = null,
+                createdAt = Clock.System.now(),
+                updatedAt = Clock.System.now(),
+            )
+
+            merchant.registerEvent(
+                MerchantRegistered(
+                    merchantId = merchant.id,
+                    publicId = merchant.publicId,
+                    email = merchant.email,
+                    businessName = merchant.businessName
+                )
+            )
+
+            return merchant
+        }
+
+        fun reconstruct(
+            id: MerchantId,
+            publicId: UUID,
+            email: String,
+            businessName: String,
+            settings: MerchantSettings,
+            status: MerchantStatus,
+            emailVerifiedAt: Instant?,
+            createdAt: Instant,
+            updatedAt: Instant,
+        ): Merchant {
+            return Merchant(
+                id = id,
+                publicId = publicId,
+                email = email,
+                businessName = businessName,
+                settings = settings,
+                status = status,
+                emailVerifiedAt = emailVerifiedAt,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }
     }
 
-    fun verify() {
+    // This is not a companion object method, it's a regular class method
+    fun reconstructWithId(id: MerchantId): Merchant {
+        return Merchant(
+            id = id,
+            publicId = this.publicId,
+            email = this.email,
+            businessName = this.businessName,
+            settings = this.settings,
+            status = this.status,
+            emailVerifiedAt = this.emailVerifiedAt,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt,
+        )
+    }
+
+    fun verifyEmail() {
         require(status == MerchantStatus.PENDING_VERIFICATION) {
             "Merchant is already ${status.name.lowercase()}"
         }
         status = MerchantStatus.ACTIVE
-        verifiedAt = LocalDateTime.now()
+        emailVerifiedAt = Clock.System.now()
+        updatedAt = Clock.System.now()
+
+        registerEvent(
+            MerchantVerified(
+                merchantId = id,
+                publicId = publicId
+            )
+        )
+    }
+
+    fun resendVerificationEmail() {
+        require(status == MerchantStatus.PENDING_VERIFICATION) {
+            "Cannot resend verification email. Merchant is ${status.name.lowercase()}"
+        }
+
+        registerEvent(
+            MerchantVerificationEmailRequested(
+                merchantId = id,
+                publicId = publicId,
+                email = email
+            )
+        )
     }
 
     fun deactivate() {
         status = MerchantStatus.INACTIVE
+        updatedAt = Clock.System.now()
+    }
+
+    fun updateBusinessName(newName: String) {
+        require(newName.isNotBlank()) { "Business name must not be blank" }
+        businessName = newName.trim()
+        updatedAt = Clock.System.now()
     }
 
     fun updateSettings(newSettings: MerchantSettings) {
         this.settings = newSettings
+        updatedAt = Clock.System.now()
     }
+
+    fun isActive(): Boolean = status == MerchantStatus.ACTIVE
+    fun isEmailVerified(): Boolean = emailVerifiedAt != null
 }

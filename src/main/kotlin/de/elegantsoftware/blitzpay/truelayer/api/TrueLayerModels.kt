@@ -1,31 +1,32 @@
 package de.elegantsoftware.blitzpay.truelayer.api
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.springframework.data.repository.query.Param
 
 data class TrueLayerPaymentRequest(
-    @JsonProperty("expires_at")
+    @Param("expires_at")
     val expiresAt: String,
 
     val reference: String,
 
-    @JsonProperty("return_uri")
+    @Param("return_uri")
     val returnUri: String,
 
-    @JsonProperty("payment_configuration")
+    @Param("payment_configuration")
     val paymentConfiguration: PaymentConfiguration,
 
-    @JsonProperty("product_items")
+    @Param("product_items")
     val productItems: List<ProductItem>,
 
     val type: String = "single_payment"
 ) {
     data class PaymentConfiguration(
-        @JsonProperty("amount_in_minor")
+        @Param("amount_in_minor")
         val amountInMinor: Long,
 
         val currency: String,
 
-        @JsonProperty("payment_method")
+        @Param("payment_method")
         val paymentMethod: PaymentMethod,
 
         val user: PaymentUser
@@ -34,7 +35,7 @@ data class TrueLayerPaymentRequest(
     data class PaymentMethod(
         val type: String = "bank_transfer",
 
-        @JsonProperty("provider_selection")
+        @Param("provider_selection")
         val providerSelection: ProviderSelection = ProviderSelection(),
 
         val beneficiary: Beneficiary
@@ -47,7 +48,7 @@ data class TrueLayerPaymentRequest(
     data class Beneficiary(
         val type: String = "merchant_account",
 
-        @JsonProperty("merchant_account_id")
+        @Param("merchant_account_id")
         val merchantAccountId: String
     )
 
@@ -57,28 +58,28 @@ data class TrueLayerPaymentRequest(
         val email: String? = null,
         val phone: String? = null,
 
-        @JsonProperty("date_of_birth")
+        @Param("date_of_birth")
         val dateOfBirth: String? = null,
 
         val address: Address? = null
     )
 
     data class Address(
-        @JsonProperty("address_line1")
+        @Param("address_line1")
         val addressLine1: String,
 
         val city: String,
         val state: String,
         val zip: String,
 
-        @JsonProperty("country_code")
+        @Param("country_code")
         val countryCode: String
     )
 
     data class ProductItem(
         val name: String,
 
-        @JsonProperty("price_in_minor")
+        @Param("price_in_minor")
         val priceInMinor: Long,
 
         val quantity: Int,
