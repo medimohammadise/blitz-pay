@@ -8,6 +8,8 @@ import de.elegantsoftware.blitzpay.product.inbound.web.dto.CreateProductRequest
 import de.elegantsoftware.blitzpay.product.inbound.web.dto.ProductResponse
 import de.elegantsoftware.blitzpay.product.inbound.web.dto.UpdateProductRequest
 import de.elegantsoftware.blitzpay.product.support.mapper.ProductMapper
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -17,6 +19,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/merchants/{merchantId}/products")
+@Tag(name = "Product Management", description = "APIs for managing products, including creation, updates, inventory, and catalog management")
 class ProductController(
     private val productService: ProductService,
     private val productMapper: ProductMapper
@@ -24,6 +27,7 @@ class ProductController(
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create product", description = "Creates a new product for a merchant with variants, pricing, and inventory management")
     fun createProduct(
         @PathVariable merchantId: Long,
         @Valid @RequestBody request: CreateProductRequest

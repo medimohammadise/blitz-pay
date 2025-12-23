@@ -4,6 +4,8 @@ import de.elegantsoftware.blitzpay.payment.api.PaymentService
 import de.elegantsoftware.blitzpay.payment.domain.Payment
 import de.elegantsoftware.blitzpay.payment.domain.PaymentLink
 import de.elegantsoftware.blitzpay.payment.inbound.web.dto.*
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -13,6 +15,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/v1/payments")
+@Tag(name = "Payment Processing", description = "APIs for payment processing, including payment links, QR codes, and transaction management")
 class PaymentController(
     private val paymentService: PaymentService
 ) {
@@ -20,6 +23,7 @@ class PaymentController(
     private val logger = LoggerFactory.getLogger(PaymentController::class.java)
 
     @PostMapping("/links")
+    @Operation(summary = "Create payment link", description = "Creates a payment link for multiple products with QR code generation capability")
     fun createPaymentLink(@RequestBody request: CreatePaymentLinkRequest): ResponseEntity<PaymentLinkDto> {
         logger.info("Creating payment link for merchant: {}, products: {}", request.merchantId, request.productIds)
 
@@ -60,6 +64,7 @@ class PaymentController(
     }
 
     @GetMapping("/{paymentId}/qr-code/base64")
+    @Operation(summary = "Generate QR code (Base64)", description = "Generates a QR code for payment in Base64 format for web/mobile display")
     fun getQRCodeBase64(@PathVariable paymentId: UUID): ResponseEntity<QRCodeResponse> {
         logger.info("Generating QR code (base64) for payment: {}", paymentId)
 

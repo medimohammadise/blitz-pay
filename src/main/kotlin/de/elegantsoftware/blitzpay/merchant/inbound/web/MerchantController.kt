@@ -12,6 +12,8 @@ import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.VerificationRequestR
 import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.VerificationResponse
 import de.elegantsoftware.blitzpay.merchant.support.exception.MerchantException
 import de.elegantsoftware.blitzpay.merchant.support.mapper.MerchantMapper
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,6 +22,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/merchants")
+@Tag(name = "Merchant Management", description = "APIs for managing merchants, including registration, verification, and profile management")
 class MerchantController(
     private val merchantService: MerchantService,
     private val merchantMapper: MerchantMapper
@@ -29,6 +32,7 @@ class MerchantController(
 
     // POST /api/merchants - Create a new merchant
     @PostMapping
+    @Operation(summary = "Register a new merchant", description = "Creates a new merchant account with business information and notification preferences")
     fun create(@RequestBody request: CreateMerchantRequest): ResponseEntity<MerchantResponse> {
         logger.info("Creating merchant: ${request.email}")
 
@@ -41,8 +45,7 @@ class MerchantController(
     }
 
     // GET /api/merchants/verification?token={token} - Verify email
-    @GetMapping("/verification")
-    fun verifyEmail(@RequestParam token: UUID): ResponseEntity<VerificationResponse> {
+    @GetMapping("/verification")    @Operation(summary = "Verify merchant email", description = "Verifies a merchant's email address using the verification token sent during registration")    fun verifyEmail(@RequestParam token: UUID): ResponseEntity<VerificationResponse> {
         logger.info("Verifying email with token: $token")
 
         val merchant = merchantService.verifyMerchantEmail(token)
@@ -76,6 +79,7 @@ class MerchantController(
 
     // GET /api/merchants/{publicId} - Get merchant by public ID
     @GetMapping("/{publicId}")
+    @Operation(summary = "Get merchant details", description = "Retrieves merchant information using their public identifier")
     fun getByPublicId(@PathVariable publicId: UUID): ResponseEntity<MerchantResponse> {
         val merchant = merchantService.getMerchantByPublicId(publicId)
         return ResponseEntity.ok(merchantMapper.toResponse(merchant))

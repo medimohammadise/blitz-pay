@@ -4,6 +4,8 @@ import de.elegantsoftware.blitzpay.invoice.api.InvoiceService
 import de.elegantsoftware.blitzpay.invoice.api.RemoveInvoiceItemApiRequest
 import de.elegantsoftware.blitzpay.invoice.inbound.web.dto.*
 import de.elegantsoftware.blitzpay.invoice.support.mapper.InvoiceMapper
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -12,6 +14,7 @@ import java.util.UUID
 
 @RestController
 @RequestMapping("/api/invoices")
+@Tag(name = "Invoice Management", description = "APIs for invoice creation, management, and processing")
 class InvoiceController(
     private val invoiceService: InvoiceService,
     private val invoiceMapper: InvoiceMapper
@@ -19,6 +22,7 @@ class InvoiceController(
     
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Create invoice", description = "Creates a new invoice for products with customer information and payment tracking")
     fun createInvoice(@RequestBody request: CreateInvoiceWebRequest): InvoiceWebResponse {
         val apiRequest = invoiceMapper.toApiRequest(request)
         val invoice = invoiceService.createInvoice(apiRequest)

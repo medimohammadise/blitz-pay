@@ -40,6 +40,7 @@ dependencies {
 
     // Database
     implementation(libs.postgresql)
+    runtimeOnly(libs.h2)
 
     // Flyway - ADDED
     implementation(libs.flyway.core)
@@ -78,6 +79,7 @@ dependencies {
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.mockito.kotlin)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.h2)
 }
 
 dependencyManagement {

@@ -11,10 +11,10 @@ modulith:
     pathmatch:
       matching-strategy: ant_path_matcher
   datasource:
-    url: '${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/quickpay_db}'
-    driver-class-name: org.postgresql.Driver
-    username: '${SPRING_DATASOURCE_USERNAME:postgres}'
-    password: '${SPRING_DATASOURCE_PASSWORD:postgres}'
+    url: "${SPRING_DATASOURCE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}"
+    driver-class-name: "${SPRING_DATASOURCE_DRIVER:org.h2.Driver}"
+    username: "${SPRING_DATASOURCE_USERNAME:sa}"
+    password: "${SPRING_DATASOURCE_PASSWORD:}"
   jpa:
     open-in-view: false
     hibernate:
@@ -32,7 +32,7 @@ modulith:
     validate-on-migrate: true
     locations: classpath:db/migration
     # If you want to clean DB in dev (DANGEROUS in production!)
-    clean-disabled: false  # Set to true in production!
+    clean-disabled: false # Set to true in production!
 
     # Schema management
     schemas: public
@@ -55,13 +55,13 @@ qr:
     minutes: 15
     cleanup-interval: 300000
   truelayer:
-    deep-link-base: 'https://payment.truelayer.com/quickpay'
-    redirect-uri: 'http://10.0.2.2:8080/api/qr-payments/callback'
+    deep-link-base: "https://payment.truelayer.com/quickpay"
+    redirect-uri: "http://10.0.2.2:8080/api/qr-payments/callback"
   server:
-    base-url: 'http://localhost:8080'  # For backend internal use
+    base-url: "http://localhost:8080" # For backend internal use
 
 server:
-  address: 0.0.0.0  # This is correct! Listen on all interfaces
+  address: 0.0.0.0 # This is correct! Listen on all interfaces
   port: 8080
   tomcat:
     max-threads: 50
@@ -70,7 +70,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: 'metrics,health'
+        include: "metrics,health"
   endpoint:
     metrics:
       enabled: true
@@ -98,17 +98,17 @@ springdoc:
   default-produces-media-type: application/json
 
 truelayer:
-  apiBase: '${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}'
-  accessToken: '${TRUELAYER_ACCESS_TOKEN:dummy-access-token}'
-  webhookJku: '${TRUELAYER_WEBHOOK_JKU:http://localhost:8080/.well-known/jwks.json}'
-  clientId: '${TRUELAYER_CLIENT_ID}'
-  clientSecret: '${TRUELAYER_CLIENT_SECRET}'
-  keyId: '${TRUELAYER_KEY_ID}'
-  privateKeyPath: '${TRUELAYER_PRIVATE_KEY_PATH}'
-  environment: '${TRUELAYER_ENV:sandbox}'
-  httpLogs: '${TRUELAYER_HTTP_LOGS:false}'
-  merchantAccountId: '${TRUELAYER_MERCHANT_ACCOUNT_ID}'
-  redirectUri: '${TRUELAYER_REDIRECT_URI:http://localhost:8080/return}'
+  apiBase: "${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}"
+  accessToken: "${TRUELAYER_ACCESS_TOKEN:dummy-access-token}"
+  webhookJku: "${TRUELAYER_WEBHOOK_JKU:http://localhost:8080/.well-known/jwks.json}"
+  clientId: "${TRUELAYER_CLIENT_ID}"
+  clientSecret: "${TRUELAYER_CLIENT_SECRET}"
+  keyId: "${TRUELAYER_KEY_ID}"
+  privateKeyPath: "${TRUELAYER_PRIVATE_KEY_PATH}"
+  environment: "${TRUELAYER_ENV:sandbox}"
+  httpLogs: "${TRUELAYER_HTTP_LOGS:false}"
+  merchantAccountId: "${TRUELAYER_MERCHANT_ACCOUNT_ID}"
+  redirectUri: "${TRUELAYER_REDIRECT_URI:http://localhost:8080/return}"
   webhooks:
     environment: sandbox
     maxSkew: 3600
@@ -121,6 +121,6 @@ logging:
     de.elegantsoftware.blitzpay.truelayer.inbound: TRACE
 
   pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
   file:
     name: logs/quickpay.log

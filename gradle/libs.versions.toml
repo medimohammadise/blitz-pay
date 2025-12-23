@@ -17,6 +17,7 @@ kotlin-logging = "3.0.5"
 mockito-kotlin = "6.1.0"
 flyway = "11.19.0"
 jjwt-api = "0.13.0"
+h2 = "2.2.224"
 
 # Test
 testcontainers = "1.21.4"
@@ -40,6 +41,7 @@ spring-modulith-starter-insight = { module = "org.springframework.modulith:sprin
 
 # Database
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 
 # Flyway - NEW
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
