@@ -119,6 +119,11 @@ class MerchantServiceImpl(
         return merchantMapper.toDomain(merchantEntity)
     }
 
+    override fun validateMerchant(publicId: UUID) {
+        merchantRepository.findByPublicId(publicId)
+            ?: throw MerchantNotFoundException(publicId = publicId)
+    }
+
     override fun updateMerchantSettings(merchantId: MerchantId, settings: MerchantSettings): Merchant {
         val merchant = self.getMerchant(merchantId)
 

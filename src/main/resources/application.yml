@@ -111,7 +111,7 @@ truelayer:
   redirectUri: '${TRUELAYER_REDIRECT_URI:http://localhost:8080/return}'
   webhooks:
     environment: sandbox
-    maxSkew: PT60M
+    maxSkew: 3600
 
 # LOGGING MUST BE AT ROOT LEVEL, not under qr.server!
 logging:

@@ -4,6 +4,7 @@ import de.elegantsoftware.blitzpay.product.domain.Product
 import de.elegantsoftware.blitzpay.product.domain.ProductId
 import de.elegantsoftware.blitzpay.product.domain.ProductStatus
 import de.elegantsoftware.blitzpay.product.domain.ProductType
+import de.elegantsoftware.blitzpay.product.domain.ProductVariant
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import java.math.BigDecimal
@@ -17,7 +18,7 @@ interface ProductService {
         type: ProductType,
         basePrice: BigDecimal,
         currency: String,
-        variants: List<ProductVariantData>,
+        variants: List<ProductVariant>,
         initialStock: Int,
         trackInventory: Boolean,
         categoryId: Long?,
@@ -33,7 +34,7 @@ interface ProductService {
         type: ProductType?,
         basePrice: BigDecimal?,
         currency: String?,
-        variants: List<ProductVariantData>?,
+        variants: List<ProductVariant>?,
         categoryId: Long?,
         tags: Set<String>?,
         metadata: Map<String, String>?
@@ -41,6 +42,10 @@ interface ProductService {
 
     fun getProduct(merchantId: Long, productPublicId: UUID): Product
     fun getProductById(productId: ProductId): Product
+    fun getProductsByIds(productIds: List<UUID>): List<Product>
+    fun getTotalPrice(productIds: List<UUID>): BigDecimal
+
+    fun getProductsByPublicIds(merchantId: Long, productPublicIds: List<UUID>): List<Product>
     fun listProducts(merchantId: Long, pageable: Pageable): Page<Product>
     fun searchProducts(
         merchantId: Long,

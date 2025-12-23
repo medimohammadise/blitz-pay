@@ -16,10 +16,13 @@ zxing-javase = "3.5.4"
 kotlin-logging = "3.0.5"
 mockito-kotlin = "6.1.0"
 flyway = "11.19.0"
+jjwt-api = "0.13.0"
 
 # Test
 testcontainers = "1.21.4"
 junit-platform = "6.0.0"
+
+
 
 [libraries]
 # Spring Boot
@@ -64,6 +67,10 @@ zxing-javase = { module = "com.google.zxing:javase", version.ref = "zxing-javase
 
 # Logging
 kotlin-logging-jvm = { module = "io.github.microutils:kotlin-logging-jvm", version.ref = "kotlin-logging" }
+
+jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt-api" }
+jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt-api" }
+jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt-api" }
 
 # Test
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }

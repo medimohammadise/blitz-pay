@@ -3,9 +3,10 @@ package de.elegantsoftware.blitzpay.invoice.outbound.persistence
 import de.elegantsoftware.blitzpay.invoice.domain.*
 import jakarta.persistence.*
 import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.*
+import kotlin.time.Clock
+import kotlin.time.Instant
+
 @Entity
 @Table(name = "invoices", indexes = [
     Index(name = "idx_invoice_merchant", columnList = "merchant_id"),
@@ -38,7 +39,9 @@ data class InvoiceEntity(
         AttributeOverride(name = "city", column = Column(name = "merchant_city")),
         AttributeOverride(name = "state", column = Column(name = "merchant_state")),
         AttributeOverride(name = "postalCode", column = Column(name = "merchant_postal_code")),
-        AttributeOverride(name = "country", column = Column(name = "merchant_country"))
+        AttributeOverride(name = "country", column = Column(name = "merchant_country")),
+        AttributeOverride(name = "phone", column = Column(name = "merchant_phone")),
+        AttributeOverride(name = "email", column = Column(name = "merchant_email"))
     )
     val merchantAddress: AddressEmbeddable,
 
@@ -60,7 +63,9 @@ data class InvoiceEntity(
         AttributeOverride(name = "city", column = Column(name = "customer_city")),
         AttributeOverride(name = "state", column = Column(name = "customer_state")),
         AttributeOverride(name = "postalCode", column = Column(name = "customer_postal_code")),
-        AttributeOverride(name = "country", column = Column(name = "customer_country"))
+        AttributeOverride(name = "country", column = Column(name = "customer_country")),
+        AttributeOverride(name = "phone", column = Column(name = "customer_phone")),
+        AttributeOverride(name = "email", column = Column(name = "customer_address_email"))
     )
     val customerAddress: AddressEmbeddable?,
 
@@ -72,10 +77,10 @@ data class InvoiceEntity(
     val invoiceType: InvoiceType = InvoiceType.STANDARD,
 
     @Column(name = "issue_date", nullable = false)
-    val issueDate: LocalDate,
+    val issueDate: Instant,
 
     @Column(name = "due_date", nullable = false)
-    val dueDate: LocalDate,
+    val dueDate: Instant,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_term", nullable = false)
@@ -282,28 +287,28 @@ data class PaymentMethodEmbeddable(
 @Embeddable
 data class InvoiceMetadataEmbeddable(
     @Column(name = "created_at", nullable = false)
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: Instant = Clock.System.now(),
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now(),
+    var updatedAt: Instant = Clock.System.now(),
 
     @Column(name = "sent_date")
-    var sentDate: LocalDate? = null,
+    var sentDate: Instant? = null,
 
     @Column(name = "paid_date")
-    var paidDate: LocalDate? = null,
+    var paidDate: Instant? = null,
 
     @Column(name = "overdue_date")
-    var overdueDate: LocalDate? = null,
+    var overdueDate: Instant? = null,
 
     @Column(name = "reminder_sent_date")
-    var reminderSentDate: LocalDate? = null,
+    var reminderSentDate: Instant? = null,
 
     @Column(name = "qr_code_generated")
     var qrCodeGenerated: Boolean = false,
 
     @Column(name = "qr_code_generated_at")
-    var qrCodeGeneratedAt: LocalDateTime? = null,
+    var qrCodeGeneratedAt: Instant? = null,
 
     @ElementCollection
     @CollectionTable(name = "invoice_custom_fields", joinColumns = [JoinColumn(name = "invoice_id")])

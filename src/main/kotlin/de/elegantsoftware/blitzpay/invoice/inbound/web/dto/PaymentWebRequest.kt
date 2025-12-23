@@ -1,11 +1,12 @@
 package de.elegantsoftware.blitzpay.invoice.inbound.web.dto
 
 import java.math.BigDecimal
-import java.time.LocalDate
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 data class PaymentWebRequest(
     val amount: BigDecimal,
-    val paymentDate: LocalDate = LocalDate.now(),
+    val paymentDate: Instant = Clock.System.now(),
     val paymentMethod: String,
     val reference: String? = null,
     val transactionId: String? = null

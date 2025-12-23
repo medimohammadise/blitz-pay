@@ -1,7 +1,6 @@
 package de.elegantsoftware.blitzpay.product.support
 
 import de.elegantsoftware.blitzpay.product.api.ProductService
-import de.elegantsoftware.blitzpay.product.api.ProductVariantData
 import de.elegantsoftware.blitzpay.product.domain.Price
 import de.elegantsoftware.blitzpay.product.domain.Product
 import de.elegantsoftware.blitzpay.product.domain.ProductId
@@ -13,6 +12,7 @@ import de.elegantsoftware.blitzpay.product.domain.events.*
 import de.elegantsoftware.blitzpay.product.outbound.persistence.ProductRepository
 import de.elegantsoftware.blitzpay.product.support.exception.*
 import de.elegantsoftware.blitzpay.product.support.mapper.ProductJpaMapper
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -30,6 +30,8 @@ class ProductServiceImpl(
     private val eventPublisher: ApplicationEventPublisher,
 ) : ProductService {
 
+    private val logger = LoggerFactory.getLogger(ProductServiceImpl::class.java)
+
     override fun createProduct(
         merchantId: Long,
         name: String,
@@ -37,7 +39,7 @@ class ProductServiceImpl(
         type: ProductType,
         basePrice: BigDecimal,
         currency: String,
-        variants: List<ProductVariantData>,
+        variants: List<ProductVariant>,
         initialStock: Int,
         trackInventory: Boolean,
         categoryId: Long?,
@@ -64,8 +66,8 @@ class ProductServiceImpl(
             }
 
             // Validate variant price
-            if (variant.price < BigDecimal.ZERO) {
-                throw InvalidPriceException(price = variant.price, field = "variant.${variant.sku}.price")
+            if (variant.price.amount < BigDecimal.ZERO) {
+                throw InvalidPriceException(price = variant.price.amount, field = "variant.${variant.sku}.price")
             }
         }
 
@@ -76,8 +78,8 @@ class ProductServiceImpl(
                 sku = variantData.sku,
                 name = variantData.name,
                 price = Price(
-                    amount = variantData.price,
-                    currency = variantData.currency
+                    amount = variantData.price.amount,
+                    currency = variantData.price.currency
                 ),
                 attributes = variantData.attributes
             )
@@ -126,7 +128,7 @@ class ProductServiceImpl(
         type: ProductType?,
         basePrice: BigDecimal?,
         currency: String?,
-        variants: List<ProductVariantData>?,
+        variants: List<ProductVariant>?,
         categoryId: Long?,
         tags: Set<String>?,
         metadata: Map<String, String>?
@@ -165,8 +167,8 @@ class ProductServiceImpl(
             }
 
             // Validate variant price
-            if (variantData.price < BigDecimal.ZERO) {
-                throw InvalidPriceException(price = variantData.price, field = "variant.${variantData.sku}.price")
+            if (variantData.price.amount < BigDecimal.ZERO) {
+                throw InvalidPriceException(price = variantData.price.amount, field = "variant.${variantData.sku}.price")
             }
         }
 
@@ -177,16 +179,16 @@ class ProductServiceImpl(
                 existingVariant?.copy(
                     name = variantData.name,
                     price = Price(
-                        amount = variantData.price,
-                        currency = variantData.currency
+                        amount = variantData.price.amount,
+                        currency = variantData.price.currency
                     ),
                     attributes = variantData.attributes
                 ) ?: ProductVariant(
                     sku = variantData.sku,
                     name = variantData.name,
                     price = Price(
-                        amount = variantData.price,
-                        currency = variantData.currency
+                        amount = variantData.price.amount,
+                        currency = variantData.price.currency
                     ),
                     attributes = variantData.attributes
                 )
@@ -243,6 +245,52 @@ class ProductServiceImpl(
         return productJpaMapper.toDomain(entity)
     }
 
+    override fun getProductsByIds(productIds: List<UUID>): List<Product> {
+        logger.info("Getting products by public IDs: {}", productIds)
+
+        if (productIds.isEmpty()) {
+            return emptyList()
+        }
+
+        return try {
+            // FIXED: Repository returns List<ProductJpaEntity>, need to map to Product
+            productRepository.findByPublicIdIn(productIds)
+                .map { productJpaMapper.toDomain(it) }
+        } catch (e: Exception) {
+            logger.error("Failed to get products by public IDs: $productIds", e)
+            emptyList()
+        }
+    }
+
+    override fun getTotalPrice(productIds: List<UUID>): BigDecimal {
+        logger.info("Calculating total price for products: {}", productIds)
+
+        if (productIds.isEmpty()) {
+            return BigDecimal.ZERO
+        }
+
+        return try {
+            productRepository.findByPublicIdIn(productIds)
+                .fold(BigDecimal.ZERO) { acc, entity -> acc.add(entity.basePriceAmount) }
+        } catch (e: Exception) {
+            logger.error("Failed to calculate total price for products: $productIds", e)
+            BigDecimal.ZERO
+        }
+    }
+
+    override fun getProductsByPublicIds(merchantId: Long, productPublicIds: List<UUID>): List<Product> {
+        logger.info("Getting products for merchant {} by public IDs: {}", merchantId, productPublicIds)
+
+        return try {
+            // FIXED: Repository returns List<ProductJpaEntity>, need to map to Product
+            productRepository.findByMerchantIdAndPublicIdIn(merchantId, productPublicIds)
+                .map { productJpaMapper.toDomain(it) }
+        } catch (e: Exception) {
+            logger.error("Failed to get products for merchant $merchantId by public IDs: $productPublicIds", e)
+            emptyList()
+        }
+    }
+
     override fun listProducts(merchantId: Long, pageable: Pageable): Page<Product> {
         return productRepository.findAllByMerchantId(merchantId, pageable)
             .map { productJpaMapper.toDomain(it) }
@@ -258,8 +306,8 @@ class ProductServiceImpl(
         return productRepository.searchByMerchantId(
             merchantId = merchantId,
             query = query.ifBlank { null },
-            status = status?.name,
-            type = type?.name,
+            status = status,  // FIXED: Pass enum directly, not .name
+            type = type,      // FIXED: Pass enum directly, not .name
             pageable = pageable
         ).map { productJpaMapper.toDomain(it) }
     }
@@ -344,9 +392,10 @@ class ProductServiceImpl(
             throw InventoryTrackingDisabledException(productPublicId)
         }
 
+        // FIXED: Check if domain class has these methods, or implement them
         if (adjustment < 0) {
             val quantityToReduce = -adjustment
-            if (!product.hasSufficientStock(quantityToReduce)) {
+            if (product.inventory.quantity < quantityToReduce) {
                 throw InsufficientStockException(
                     productPublicId = productPublicId,
                     requestedQuantity = quantityToReduce,
@@ -355,11 +404,14 @@ class ProductServiceImpl(
             }
         }
 
-        val updatedProduct = if (adjustment >= 0) {
-            product.increaseStock(adjustment)
-        } else {
-            product.reduceStock(-adjustment)
-        }
+        val updatedInventory = product.inventory.copy(
+            quantity = product.inventory.quantity + adjustment
+        )
+
+        val updatedProduct = product.copy(
+            inventory = updatedInventory,
+            updatedAt = Clock.System.now()
+        )
 
         val updatedEntity = productJpaMapper.updateEntity(entity, updatedProduct)
         val savedEntity = productRepository.save(updatedEntity)

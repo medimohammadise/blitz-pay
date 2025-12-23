@@ -2,8 +2,9 @@ package de.elegantsoftware.blitzpay.invoice.api
 
 import de.elegantsoftware.blitzpay.invoice.domain.*
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 interface InvoiceService {
     fun createInvoice(request: CreateInvoiceApiRequest): Invoice
@@ -40,8 +41,8 @@ data class CreateInvoiceApiRequest(
     val customerEmail: String? = null,
     val customerAddress: AddressApi? = null,
     val invoiceType: InvoiceType = InvoiceType.STANDARD,
-    val issueDate: LocalDate = LocalDate.now(),
-    val dueDate: LocalDate? = null,
+    val issueDate: Instant = Clock.System.now(),
+    val dueDate: Instant? = null,
     val paymentTerm: PaymentTerm = PaymentTerm.NET_30,
     val currency: String = "EUR",
     val notes: String? = null,
@@ -92,7 +93,7 @@ data class RemoveInvoiceItemApiRequest(
 
 data class PaymentDetailsApi(
     val amount: BigDecimal,
-    val paymentDate: LocalDate = LocalDate.now(),
+    val paymentDate: Instant = Clock.System.now(),
     val paymentMethod: PaymentMethodType,
     val reference: String? = null,
     val transactionId: String? = null

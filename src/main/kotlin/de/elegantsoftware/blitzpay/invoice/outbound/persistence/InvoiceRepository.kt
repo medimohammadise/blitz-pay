@@ -5,8 +5,9 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
-import java.time.LocalDate
 import java.util.UUID
+import kotlin.time.Instant
+
 interface InvoiceRepository : JpaRepository<InvoiceEntity, Long> {
     fun findByUuid(uuid: UUID): InvoiceEntity?
     fun findByInvoiceNumber(invoiceNumber: String): InvoiceEntity?
@@ -22,7 +23,7 @@ interface InvoiceRepository : JpaRepository<InvoiceEntity, Long> {
     """)
     fun findOverdueInvoicesByMerchant(
         @Param("merchantId") merchantId: Long,
-        @Param("date") date: LocalDate
+        @Param("date") date: Instant
     ): List<InvoiceEntity>
     
     @Query("""
@@ -30,7 +31,7 @@ interface InvoiceRepository : JpaRepository<InvoiceEntity, Long> {
         WHERE i.status IN ('ISSUED', 'SENT', 'PARTIALLY_PAID') 
         AND i.dueDate < :date
     """)
-    fun findAllOverdueInvoices(@Param("date") date: LocalDate): List<InvoiceEntity>
+    fun findAllOverdueInvoices(@Param("date") date: Instant): List<InvoiceEntity>
 
     @Query(
         value = """

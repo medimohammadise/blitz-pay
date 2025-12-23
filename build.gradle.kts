@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.plugin.spring)
@@ -63,6 +65,10 @@ dependencies {
     // Dev tools
     developmentOnly(libs.spring.boot.devtools)
 
+    implementation(libs.jjwt.api)
+    runtimeOnly(libs.jjwt.impl)
+    runtimeOnly(libs.jjwt.jackson)
+
     // Test dependencies
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.boot.webmvc.test)
@@ -109,4 +115,8 @@ tasks.test {
             jvmArgs("-javaagent:${mockitoAgent.absolutePath}")
         }
     }
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.compilerOptions {
+    freeCompilerArgs.set(listOf("-Xannotation-default-target=param-property"))
 }

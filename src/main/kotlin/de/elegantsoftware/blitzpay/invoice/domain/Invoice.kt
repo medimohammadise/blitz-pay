@@ -1,8 +1,9 @@
 package de.elegantsoftware.blitzpay.invoice.domain
 
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 data class Invoice(
     val id: InvoiceId,
@@ -20,8 +21,8 @@ data class Invoice(
     val customerTaxId: String?,
     val invoiceNumber: String,
     val invoiceType: InvoiceType = InvoiceType.STANDARD,
-    val issueDate: LocalDate,
-    val dueDate: LocalDate,
+    val issueDate: Instant,
+    val dueDate: Instant,
     val paymentTerm: PaymentTerm,
     var status: InvoiceStatus,
     val items: MutableList<InvoiceItem> = mutableListOf(),
@@ -56,11 +57,11 @@ data class Invoice(
     fun send(): Invoice {
         require(status == InvoiceStatus.ISSUED) { "Only ISSUED invoices can be sent" }
         status = InvoiceStatus.SENT
-        metadata.sentDate = LocalDate.now()
+        metadata.sentDate = Clock.System.now()
         return this
     }
 
-    fun markAsPaid(paymentDate: LocalDate = LocalDate.now()): Invoice {
+    fun markAsPaid(paymentDate: Instant = Clock.System.now()): Invoice {
         status = InvoiceStatus.PAID
         metadata.paidDate = paymentDate
         return this
@@ -100,8 +101,8 @@ data class Invoice(
             customerEmail: String?,
             customerAddress: Address?,
             invoiceNumber: String,
-            issueDate: LocalDate,
-            dueDate: LocalDate,
+            issueDate: Instant,
+            dueDate: Instant,
             paymentTerm: PaymentTerm
         ): Invoice {
             return Invoice(

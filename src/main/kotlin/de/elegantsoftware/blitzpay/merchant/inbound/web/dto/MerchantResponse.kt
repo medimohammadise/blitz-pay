@@ -1,7 +1,7 @@
 package de.elegantsoftware.blitzpay.merchant.inbound.web.dto
 
-import java.time.LocalDateTime
 import java.util.UUID
+import kotlin.time.Instant
 
 data class MerchantResponse(
     val id: UUID,
@@ -10,7 +10,7 @@ data class MerchantResponse(
     val status: de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus,
     val isActive: Boolean,
     val isEmailVerified: Boolean,
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
+    val createdAt: Instant,
+    val updatedAt: Instant,
     val settings: MerchantSettingsResponse? = null
 )

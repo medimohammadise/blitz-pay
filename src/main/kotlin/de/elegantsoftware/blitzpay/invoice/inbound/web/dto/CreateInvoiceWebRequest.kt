@@ -1,7 +1,8 @@
 package de.elegantsoftware.blitzpay.invoice.inbound.web.dto
 
-import java.time.LocalDate
 import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 data class CreateInvoiceWebRequest(
     val merchantId: Long,
@@ -14,8 +15,8 @@ data class CreateInvoiceWebRequest(
     val customerEmail: String? = null,
     val customerAddress: AddressWebRequest? = null,
     val invoiceType: String = "STANDARD",
-    val issueDate: LocalDate = LocalDate.now(),
-    val dueDate: LocalDate? = null,
+    val issueDate: Instant = Clock.System.now(),
+    val dueDate: Instant? = null,
     val paymentTerm: String = "NET_30",
     val currency: String = "EUR",
     val notes: String? = null,

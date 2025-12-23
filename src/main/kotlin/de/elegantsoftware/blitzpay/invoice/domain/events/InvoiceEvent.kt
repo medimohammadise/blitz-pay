@@ -1,14 +1,13 @@
 package de.elegantsoftware.blitzpay.invoice.domain.events
 
-import de.elegantsoftware.blitzpay.invoice.domain.Invoice
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 sealed class InvoiceEvent(
     open val aggregateId: UUID,
     open val eventType: String,
-    open val timestamp: LocalDateTime = LocalDateTime.now(),
+    open val timestamp: Instant = Clock.System.now(),
     open val version: Int = 1
 )
 
@@ -22,7 +21,7 @@ data class InvoiceCreatedEvent(
     val status: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_CREATED",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp:Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -31,12 +30,12 @@ data class InvoiceIssuedEvent(
     val invoiceNumber: String,
     val merchantId: Long,
     val customerId: Long?,
-    val issueDate: LocalDate,
-    val dueDate: LocalDate,
+    val issueDate: Instant,
+    val dueDate: Instant,
     val totalAmount: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_ISSUED",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp:Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -46,10 +45,10 @@ data class InvoiceSentEvent(
     val merchantId: Long,
     val customerId: Long?,
     val customerEmail: String?,
-    val sentDate: LocalDate,
+    val sentDate: Instant,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_SENT",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -61,10 +60,10 @@ data class InvoicePaidEvent(
     val amountPaid: String,
     val paymentMethod: String,
     val paymentReference: String?,
-    val paymentDate: LocalDate,
+    val paymentDate: Instant,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_PAID",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -75,10 +74,10 @@ data class InvoicePartiallyPaidEvent(
     val customerId: Long?,
     val amountPaid: String,
     val remainingBalance: String,
-    val paymentDate: LocalDate,
+    val paymentDate: Instant,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_PARTIALLY_PAID",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -89,7 +88,7 @@ data class InvoiceCancelledEvent(
     val reason: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_CANCELLED",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp:Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -98,12 +97,12 @@ data class InvoiceOverdueEvent(
     val invoiceNumber: String,
     val merchantId: Long,
     val customerId: Long?,
-    val dueDate: LocalDate,
+    val dueDate: Instant,
     val overdueDays: Int,
     val totalAmount: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_OVERDUE",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -116,7 +115,7 @@ data class InvoiceQRCodeGeneratedEvent(
     val qrCodeType: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_QR_CODE_GENERATED",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -131,7 +130,7 @@ data class InvoiceItemAddedEvent(
     val lineTotal: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_ITEM_ADDED",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)
 
@@ -145,6 +144,6 @@ data class InvoiceItemRemovedEvent(
     val lineTotal: String,
     override val aggregateId: UUID = invoiceId,
     override val eventType: String = "INVOICE_ITEM_REMOVED",
-    override val timestamp: LocalDateTime = LocalDateTime.now(),
+    override val timestamp: Instant = Clock.System.now(),
     override val version: Int = 1
 ) : InvoiceEvent(aggregateId, eventType, timestamp, version)

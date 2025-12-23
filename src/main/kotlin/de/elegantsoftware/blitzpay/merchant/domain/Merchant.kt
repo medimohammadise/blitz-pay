@@ -16,6 +16,7 @@ class Merchant(
     var settings: MerchantSettings,
     var status: MerchantStatus,
     var emailVerifiedAt: Instant? = null,
+    var verifiedAt: Instant? = null,
     val createdAt: Instant,
     var updatedAt: Instant
 ) : AbstractAggregateRoot<Merchant>() {
@@ -77,6 +78,26 @@ class Merchant(
                 updatedAt = updatedAt,
             )
         }
+    }
+
+    fun verify() {
+        require(status == MerchantStatus.PENDING_VERIFICATION) {
+            "Merchant is already ${status.name.lowercase()}"
+        }
+        require(emailVerifiedAt != null) {
+            "Email must be verified before merchant verification"
+        }
+
+        status = MerchantStatus.ACTIVE
+        verifiedAt = Clock.System.now()
+        updatedAt = Clock.System.now()
+
+        registerEvent(
+            MerchantVerified(
+                merchantId = id,
+                publicId = publicId
+            )
+        )
     }
 
     // This is not a companion object method, it's a regular class method

@@ -1,16 +1,16 @@
 package de.elegantsoftware.blitzpay.invoice.domain
 
-import java.time.LocalDate
-import java.time.LocalDateTime
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 data class InvoiceMetadata(
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-    var updatedAt: LocalDateTime = LocalDateTime.now(),
-    var sentDate: LocalDate? = null,
-    var paidDate: LocalDate? = null,
-    var overdueDate: LocalDate? = null,
-    var reminderSentDate: LocalDate? = null,
+    val createdAt: Instant = Clock.System.now(),
+    var updatedAt: Instant = Clock.System.now(),
+    var sentDate: Instant? = null,
+    var paidDate: Instant? = null,
+    var overdueDate: Instant? = null,
+    var reminderSentDate: Instant? = null,
     var qrCodeGenerated: Boolean = false,
-    var qrCodeGeneratedAt: LocalDateTime? = null,
+    var qrCodeGeneratedAt: Instant? = null,
     val customFields: MutableMap<String, String> = mutableMapOf()
 )

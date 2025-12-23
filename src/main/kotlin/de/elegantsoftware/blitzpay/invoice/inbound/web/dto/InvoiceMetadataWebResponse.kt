@@ -1,15 +1,15 @@
 package de.elegantsoftware.blitzpay.invoice.inbound.web.dto
 
-import java.time.LocalDate
-import java.time.LocalDateTime
+import kotlin.time.Instant
+
 
 data class InvoiceMetadataWebResponse(
-    val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime,
-    val sentDate: LocalDate?,
-    val paidDate: LocalDate?,
-    val overdueDate: LocalDate?,
-    val reminderSentDate: LocalDate?,
+    val createdAt: Instant,
+    val updatedAt: Instant,
+    val sentDate: Instant?,
+    val paidDate: Instant?,
+    val overdueDate: Instant?,
+    val reminderSentDate: Instant?,
     val qrCodeGenerated: Boolean,
-    val qrCodeGeneratedAt: LocalDateTime?
+    val qrCodeGeneratedAt: Instant?
 )

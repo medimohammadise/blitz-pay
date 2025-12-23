@@ -1,5 +1,8 @@
 package de.elegantsoftware.blitzpay.product.outbound.persistence
 
+import de.elegantsoftware.blitzpay.product.domain.Product
+import de.elegantsoftware.blitzpay.product.domain.ProductStatus
+import de.elegantsoftware.blitzpay.product.domain.ProductType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -13,11 +16,20 @@ interface ProductRepository : JpaRepository<ProductJpaEntity, Long> {
 
     fun findByPublicId(publicId: UUID): ProductJpaEntity?
 
+    // This should return ProductJpaEntity, not Product
+    fun findByPublicIdIn(publicIds: List<UUID>): List<ProductJpaEntity>
+
     fun findByMerchantIdAndPublicId(merchantId: Long, publicId: UUID): ProductJpaEntity?
 
     fun findAllByMerchantId(merchantId: Long, pageable: Pageable): Page<ProductJpaEntity>
 
     fun existsByPublicId(publicId: UUID): Boolean
+
+    @Query("SELECT p FROM ProductJpaEntity p WHERE p.merchantId = :merchantId AND p.publicId IN :publicIds")  // Use ProductJpaEntity
+    fun findByMerchantIdAndPublicIdIn(
+        @Param("merchantId") merchantId: Long,
+        @Param("publicIds") publicIds: List<UUID>
+    ): List<ProductJpaEntity>  // Return ProductJpaEntity
 
     @Query("""
         SELECT p FROM ProductJpaEntity p 
@@ -30,8 +42,8 @@ interface ProductRepository : JpaRepository<ProductJpaEntity, Long> {
     fun searchByMerchantId(
         @Param("merchantId") merchantId: Long,
         @Param("query") query: String?,
-        @Param("status") status: String?,
-        @Param("type") type: String?,
+        @Param("status") status: ProductStatus?,  // Use ProductStatus enum, not String
+        @Param("type") type: ProductType?,  // Use ProductType enum, not String
         pageable: Pageable
     ): Page<ProductJpaEntity>
 

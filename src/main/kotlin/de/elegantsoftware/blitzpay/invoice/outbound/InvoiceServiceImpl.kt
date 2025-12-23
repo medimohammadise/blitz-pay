@@ -11,12 +11,12 @@ import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
-import java.time.LocalDate
-import java.time.LocalDateTime
 import java.util.*
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Instant
 
 @Service
-
 class InvoiceServiceImpl(
     private val invoiceRepository: InvoiceRepository,
     private val invoiceNumberGenerator: InvoiceNumberGenerator,
@@ -244,7 +244,7 @@ class InvoiceServiceImpl(
         val invoice = entity.toDomain()
         
         entity.metadata.qrCodeGenerated = true
-        entity.metadata.qrCodeGeneratedAt = LocalDateTime.now()
+        entity.metadata.qrCodeGeneratedAt = Clock.System.now()
         invoiceRepository.save(entity)
         
         eventPublisher.publishEvent(
@@ -285,10 +285,10 @@ class InvoiceServiceImpl(
     
     override fun findOverdueInvoices(merchantId: Long?): List<Invoice> {
         return if (merchantId != null) {
-            invoiceRepository.findOverdueInvoicesByMerchant(merchantId, LocalDate.now())
+            invoiceRepository.findOverdueInvoicesByMerchant(merchantId, Clock.System.now())
                 .map { it.toDomain() }
         } else {
-            invoiceRepository.findAllOverdueInvoices(LocalDate.now())
+            invoiceRepository.findAllOverdueInvoices(Clock.System.now())
                 .map { it.toDomain() }
         }
     }
@@ -327,14 +327,14 @@ class InvoiceServiceImpl(
         return pdfContent.toByteArray()
     }
     
-    private fun calculateDueDate(issueDate: LocalDate, paymentTerm: PaymentTerm): LocalDate {
+    private fun calculateDueDate(issueDate: Instant, paymentTerm: PaymentTerm): Instant {
         return when (paymentTerm) {
-            PaymentTerm.NET_7 -> issueDate.plusDays(7)
-            PaymentTerm.NET_14 -> issueDate.plusDays(14)
-            PaymentTerm.NET_30 -> issueDate.plusDays(30)
-            PaymentTerm.NET_60 -> issueDate.plusDays(60)
+            PaymentTerm.NET_7 -> issueDate.plus(7.days)
+            PaymentTerm.NET_14 -> issueDate.plus(14.days)
+            PaymentTerm.NET_30 -> issueDate.plus(30.days)
+            PaymentTerm.NET_60 -> issueDate.plus(60.days)
             PaymentTerm.DUE_ON_RECEIPT -> issueDate
-            PaymentTerm.CUSTOM -> issueDate.plusDays(30)
+            PaymentTerm.CUSTOM -> issueDate.plus(30.days)
         }
     }
 }

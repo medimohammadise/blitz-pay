@@ -1,8 +1,8 @@
 package de.elegantsoftware.blitzpay.invoice.inbound.web.dto
 
 import java.math.BigDecimal
-import java.time.LocalDate
 import java.util.UUID
+import kotlin.time.Instant
 
 data class InvoiceWebResponse(
     val id: Long,
@@ -18,8 +18,8 @@ data class InvoiceWebResponse(
     val customerAddress: AddressWebResponse?,
     val invoiceNumber: String,
     val invoiceType: String,
-    val issueDate: LocalDate,
-    val dueDate: LocalDate,
+    val issueDate: Instant,
+    val dueDate: Instant,
     val paymentTerm: String,
     val status: String,
     val items: List<InvoiceItemWebResponse>,

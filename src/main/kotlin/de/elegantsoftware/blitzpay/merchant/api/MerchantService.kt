@@ -18,6 +18,7 @@ interface MerchantService {
     fun getMerchant(merchantId: MerchantId): Merchant
 
     fun getMerchantByPublicId(publicId: UUID): Merchant
+    fun validateMerchant(publicId: UUID)
 
     fun updateMerchantSettings(merchantId: MerchantId, settings: MerchantSettings): Merchant
 
