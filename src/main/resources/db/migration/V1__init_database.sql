@@ -10,22 +10,24 @@ CREATE TABLE IF NOT EXISTS merchants (
     id BIGSERIAL PRIMARY KEY,
     public_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    business_name VARCHAR(255) NOT NULL,
+    business_name VARCHAR(255),
     default_currency VARCHAR(3) DEFAULT 'EUR',
-    transaction_fee_percentage DECIMAL(5,2) DEFAULT 2.5,
-    api_key VARCHAR(255),
-    webhook_url VARCHAR(500),
+    language VARCHAR(10) DEFAULT 'en',
+    email_notifications BOOLEAN DEFAULT true,
+    sms_notifications BOOLEAN DEFAULT false,
+    marketing_emails BOOLEAN DEFAULT false,
+    default_payment_method VARCHAR(50) DEFAULT 'card',
+    allowed_currencies VARCHAR(100) DEFAULT 'EUR,USD,GBP',
+    auto_settle BOOLEAN DEFAULT true,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING_VERIFICATION',
+    email_verified_at TIMESTAMP,
     verified_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_merchants_status CHECK (status IN (
         'PENDING_VERIFICATION', 'ACTIVE', 'INACTIVE', 'SUSPENDED'
-    )),
-    CONSTRAINT chk_merchants_fee CHECK (
-        transaction_fee_percentage >= 0 AND transaction_fee_percentage <= 100
-    )
+    ))
 );
 
 -- SECOND: Products table (references merchants.id - internal ID)

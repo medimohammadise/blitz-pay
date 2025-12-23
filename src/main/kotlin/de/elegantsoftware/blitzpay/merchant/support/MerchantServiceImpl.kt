@@ -24,7 +24,7 @@ class MerchantServiceImpl(
 
     override fun registerMerchant(
         email: String,
-        businessName: String,
+        businessName: String?,
         settings: MerchantSettings
     ): Merchant {
         logger.info("Registering new merchant: $email")

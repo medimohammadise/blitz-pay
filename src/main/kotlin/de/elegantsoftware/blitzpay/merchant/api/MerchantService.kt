@@ -7,7 +7,7 @@ interface MerchantService {
 
     fun registerMerchant(
         email: String,
-        businessName: String,
+        businessName: String? = null,
         settings: MerchantSettings = MerchantSettings()
     ): Merchant
 

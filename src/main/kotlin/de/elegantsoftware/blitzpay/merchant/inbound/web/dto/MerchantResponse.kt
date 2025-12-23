@@ -6,7 +6,7 @@ import kotlin.time.Instant
 data class MerchantResponse(
     val id: UUID,
     val email: String,
-    val businessName: String,
+    val businessName: String?,
     val status: de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus,
     val isActive: Boolean,
     val isEmailVerified: Boolean,

@@ -12,7 +12,7 @@ class Merchant(
     val id: MerchantId,
     val publicId: UUID,
     val email: String,
-    var businessName: String,
+    var businessName: String? = null,
     var settings: MerchantSettings,
     var status: MerchantStatus,
     var emailVerifiedAt: Instant? = null,
@@ -24,18 +24,18 @@ class Merchant(
     companion object {
         fun create(
             email: String,
-            businessName: String,
+            businessName: String? = null,
             settings: MerchantSettings = MerchantSettings()
         ): Merchant {
             require(email.isNotBlank()) { "Email must not be blank" }
-            require(businessName.isNotBlank()) { "Business name must not be blank" }
             require(email.contains("@")) { "Invalid email format" }
+            businessName?.let { require(it.isNotBlank()) { "Business name must not be blank" } }
 
             val merchant = Merchant(
                 id = MerchantId(0),
                 publicId = UUID.randomUUID(),
                 email = email.trim(),
-                businessName = businessName.trim(),
+                businessName = businessName?.trim(),
                 settings = settings,
                 status = MerchantStatus.PENDING_VERIFICATION,
                 emailVerifiedAt = null,
@@ -59,7 +59,7 @@ class Merchant(
             id: MerchantId,
             publicId: UUID,
             email: String,
-            businessName: String,
+            businessName: String?,
             settings: MerchantSettings,
             status: MerchantStatus,
             emailVerifiedAt: Instant?,

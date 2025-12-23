@@ -18,8 +18,8 @@ class MerchantJpaEntity(
     @Column(unique = true, nullable = false)
     val email: String,
 
-    @Column(nullable = false)
-    var businessName: String,
+    @Column(nullable = true)
+    var businessName: String?,
 
     @Column(name = "default_currency", length = 3)
     val defaultCurrency: String = "EUR",

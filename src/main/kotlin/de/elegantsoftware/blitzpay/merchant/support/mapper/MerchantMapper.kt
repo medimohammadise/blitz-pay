@@ -31,7 +31,7 @@ class MerchantMapper {
         )
     }
 
-    fun toDomain(request: CreateMerchantRequest): Triple<String, String, de.elegantsoftware.blitzpay.merchant.domain.MerchantSettings> {
+    fun toDomain(request: CreateMerchantRequest): Triple<String, String?, de.elegantsoftware.blitzpay.merchant.domain.MerchantSettings> {
         return Triple(
             request.email,
             request.businessName,

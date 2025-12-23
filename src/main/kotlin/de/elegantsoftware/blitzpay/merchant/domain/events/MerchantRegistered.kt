@@ -8,6 +8,6 @@ data class MerchantRegistered(
     val merchantId: MerchantId,
     val publicId: UUID,
     val email: String,
-    val businessName: String,
+    val businessName: String?,
     val timestamp: LocalDateTime = LocalDateTime.now()
 )
