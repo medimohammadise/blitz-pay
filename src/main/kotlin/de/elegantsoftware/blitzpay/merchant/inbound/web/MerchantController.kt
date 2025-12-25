@@ -1,7 +1,11 @@
 package de.elegantsoftware.blitzpay.merchant.inbound.web
 
 import de.elegantsoftware.blitzpay.merchant.api.MerchantService
+import de.elegantsoftware.blitzpay.merchant.domain.BusinessDetailsRequest
+import de.elegantsoftware.blitzpay.merchant.domain.BusinessDetailsResponse
 import de.elegantsoftware.blitzpay.merchant.domain.MerchantId
+import de.elegantsoftware.blitzpay.merchant.domain.MerchantSettings
+import de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus
 import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.CreateMerchantRequest
 import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.ErrorResponse
 import de.elegantsoftware.blitzpay.merchant.inbound.web.dto.MerchantResponse
@@ -59,6 +63,21 @@ class MerchantController(
         )
     }
 
+    @PostMapping("/{publicId}/complete-profile")
+    fun completeProfile(
+        @PathVariable publicId: UUID,
+        @RequestBody request: BusinessDetailsRequest
+    ): ResponseEntity<BusinessDetailsResponse> {
+        val merchant = merchantService.completeMerchantProfile(publicId, request)
+        return ResponseEntity.ok(
+            BusinessDetailsResponse(
+                success = true,
+                message = "Profile completed",
+                profileComplete = true
+            )
+        )
+    }
+
     // POST /api/merchants/{publicId}/verification-requests - Resend verification email
     @PostMapping("/{publicId}/verification-requests")
     fun createVerificationRequest(@PathVariable publicId: UUID): ResponseEntity<VerificationRequestResponse> {
@@ -95,9 +114,9 @@ class MerchantController(
     // GET /api/merchants?status=ACTIVE - List merchants with optional filtering
     @GetMapping
     fun list(
-        @RequestParam(required = false) status: de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus?
+        @RequestParam(required = false) status: MerchantStatus?
     ): ResponseEntity<List<MerchantResponse>> {
-        val merchants = if (status == de.elegantsoftware.blitzpay.merchant.domain.MerchantStatus.ACTIVE) {
+        val merchants = if (status == MerchantStatus.ACTIVE) {
             merchantService.findActiveMerchants()
         } else {
             // In real implementation, you'd have a paginated/filtered search
@@ -113,10 +132,10 @@ class MerchantController(
         @PathVariable merchantId: Long,
         @RequestBody request: UpdateMerchantSettingsRequest
     ): ResponseEntity<MerchantResponse> {
-        val settings = de.elegantsoftware.blitzpay.merchant.domain.MerchantSettings(
+        val settings = MerchantSettings(
             defaultCurrency = request.defaultCurrency,
             language = request.language,
-            notificationPreferences = de.elegantsoftware.blitzpay.merchant.domain.MerchantSettings.NotificationPreferences(
+            notificationPreferences = MerchantSettings.NotificationPreferences(
                 emailNotifications = request.emailNotifications,
                 smsNotifications = request.smsNotifications
             )

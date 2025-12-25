@@ -105,6 +105,32 @@ class MerchantServiceImpl(
         }
     }
 
+    override fun completeMerchantProfile(
+        publicId: UUID,
+        request: BusinessDetailsRequest
+    ): Merchant {
+        logger.info("Completing profile for merchant: $publicId")
+
+        // Load domain aggregate via repository & mapper
+        val merchantEntity = merchantRepository.findByPublicId(publicId)
+            ?: throw MerchantNotFoundException(publicId = publicId)
+
+        val merchant = merchantMapper.toDomain(merchantEntity)
+
+        // Apply business logic in aggregate
+        merchant.completeRegistration(request)
+
+        // Persist changes (status, timestamps, fields)
+        val updatedEntity = merchantMapper.toEntity(merchant)
+        val savedEntity = merchantRepository.save(updatedEntity)
+
+        logger.info("Merchant profile completed: $publicId")
+
+        // Return domain object
+        return merchantMapper.toDomain(savedEntity)
+    }
+
+
     override fun getMerchant(merchantId: MerchantId): Merchant {
         val merchantEntity = merchantRepository.findById(merchantId.value)
             .orElseThrow { MerchantNotFoundException(merchantId = merchantId) }

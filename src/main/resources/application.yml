@@ -119,6 +119,7 @@ logging:
     de.elegantsoftware.blitzpay: DEBUG
     de.elegantsoftware.blitzpay.api.inbound: TRACE
     de.elegantsoftware.blitzpay.truelayer.inbound: TRACE
+    web: DEBUG
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

@@ -15,15 +15,18 @@ interface MerchantService {
 
     fun resendVerificationEmail(merchantId: MerchantId)
 
-    fun getMerchant(merchantId: MerchantId): Merchant
+    fun completeMerchantProfile(
+        publicId: UUID,
+        request: BusinessDetailsRequest
+    ): Merchant
 
+    fun getMerchant(merchantId: MerchantId): Merchant
     fun getMerchantByPublicId(publicId: UUID): Merchant
+
     fun validateMerchant(publicId: UUID)
 
     fun updateMerchantSettings(merchantId: MerchantId, settings: MerchantSettings): Merchant
-
     fun updateMerchantBusinessName(merchantId: MerchantId, newName: String): Merchant
-
     fun deactivateMerchant(merchantId: MerchantId): Merchant
 
     fun findActiveMerchants(): List<Merchant>

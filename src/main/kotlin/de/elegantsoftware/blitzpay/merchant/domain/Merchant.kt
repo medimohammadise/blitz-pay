@@ -16,6 +16,13 @@ class Merchant(
     var settings: MerchantSettings,
     var status: MerchantStatus,
     var emailVerifiedAt: Instant? = null,
+    var phoneNumber: String? = null,
+    var businessAddress: String? = null,
+    var city: String? = null,
+    var postalCode: String? = null,
+    var country: String? = null,
+    var taxId: String? = null,
+    var businessType: String? = null,
     var verifiedAt: Instant? = null,
     val createdAt: Instant,
     var updatedAt: Instant
@@ -130,6 +137,23 @@ class Merchant(
             )
         )
     }
+
+    fun completeRegistration(details: BusinessDetailsRequest) {
+        require(emailVerifiedAt != null) {
+            "Email must be verified before completing registration"
+        }
+
+        phoneNumber = details.phoneNumber
+        businessAddress = details.businessAddress
+        city = details.city
+        postalCode = details.postalCode
+        country = details.country
+        taxId = details.taxId
+        businessType = details.businessType
+
+        updatedAt = Clock.System.now()
+    }
+
 
     fun resendVerificationEmail() {
         require(status == MerchantStatus.PENDING_VERIFICATION) {
