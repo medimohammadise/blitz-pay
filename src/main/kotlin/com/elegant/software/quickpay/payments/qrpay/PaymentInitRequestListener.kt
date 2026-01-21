@@ -5,7 +5,6 @@ package com.elegant.software.quickpay.payments.qrpay
 import TlWebhookEnvelope
 import com.elegant.software.quickpay.payments.support.PaymentUpdateBus
 import com.elegant.software.quickpay.payments.truelayer.api.PaymentResult
-import com.elegant.software.quickpay.payments.truelayer.outbound.PaymentService
 import mu.KotlinLogging
 import org.springframework.context.event.EventListener
 import org.springframework.modulith.ApplicationModule
@@ -14,7 +13,6 @@ import java.util.*
 
 @Component
 class PaymentInitRequestListener(
-    private val gateway: PaymentService,
     private val paymentUpdateBus: PaymentUpdateBus
 ) {
     companion object {
