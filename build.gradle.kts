@@ -33,8 +33,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
-    implementation("tools.jackson.module:jackson-module-kotlin")
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:3.0.1")
     // TrueLayer Java SDK
     implementation("com.truelayer:truelayer-java:17.4.0")
     implementation("com.truelayer:truelayer-signing:0.2.6") // official signing lib
