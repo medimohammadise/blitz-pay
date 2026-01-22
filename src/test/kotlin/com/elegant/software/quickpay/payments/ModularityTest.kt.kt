@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springsource.restbucks
+package com.elegant.software.quickpay.payments
 
-import com.elegant.software.quickpay.payments.QuickpayApplication
 import mu.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.springframework.modulith.core.ApplicationModules
