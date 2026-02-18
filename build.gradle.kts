@@ -39,6 +39,8 @@ dependencies {
     implementation("com.truelayer:truelayer-signing:0.2.6") // official signing lib
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5") //Idiomatic kotlin logging
     implementation("com.nimbusds:nimbus-jose-jwt:10.7") // Required for signature verification
+    implementation("com.google.zxing:core:3.5.3")          // QR-code generation
+    implementation("com.google.zxing:javase:3.5.3")        // QR-code image rendering
 
 
     runtimeOnly("org.postgresql:postgresql")
