@@ -4,5 +4,5 @@ import org.springframework.modulith.NamedInterface
 import org.springframework.modulith.PackageInfo
 
 @PackageInfo
-@NamedInterface("treuelayer-api")
+@NamedInterface("truelayer-api")
 class ModuleMetadata

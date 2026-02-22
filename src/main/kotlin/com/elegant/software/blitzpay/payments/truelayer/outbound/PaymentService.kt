@@ -13,7 +13,6 @@ import com.truelayer.java.payments.entities.beneficiary.MerchantAccount
 import com.truelayer.java.payments.entities.paymentmethod.PaymentMethod
 import com.truelayer.java.payments.entities.providerselection.ProviderSelection
 import com.truelayer.java.payments.entities.schemeselection.preselected.SchemeSelection
-import org.apache.commons.lang3.concurrent.UncheckedFuture.map
 import org.slf4j.LoggerFactory
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.stereotype.Component
