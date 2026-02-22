@@ -11,7 +11,7 @@ class MerchantOpenApiConfig {
     @Bean
     fun merchantApi(): GroupedOpenApi =
         GroupedOpenApi.builder()
-            .group("merchants")
+            .group("Merchant")
             .packagesToScan("com.elegant.software.blitzpay.merchant")
             .pathsToMatch("/api/merchants/**")
             .addOpenApiCustomizer { openApi: OpenAPI ->
