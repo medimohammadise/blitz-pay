@@ -1,0 +1,191 @@
+name: Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    # Only run when the PR was actually merged (not just closed)
+    if: github.event.pull_request.merged == true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ------------------------------------------------------------------
+      # 1. Collect PR labels
+      # ------------------------------------------------------------------
+      - name: Collect PR labels
+        id: pr_labels
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          labels=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json labels --jq '.labels[].name' | tr '\n' ' ')
+          echo "labels=${labels}" >> "$GITHUB_OUTPUT"
+          echo "PR labels: ${labels}"
+
+      # ------------------------------------------------------------------
+      # 2. Calculate next semantic version
+      # ------------------------------------------------------------------
+      - name: Calculate next version
+        id: semver
+        env:
+          PR_LABELS: ${{ steps.pr_labels.outputs.labels }}
+        run: |
+          chmod +x .github/scripts/semver.sh
+          .github/scripts/semver.sh
+
+      # ------------------------------------------------------------------
+      # 3. Generate release notes
+      # ------------------------------------------------------------------
+      - name: Generate release notes
+        id: release_notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_LABELS: ${{ steps.pr_labels.outputs.labels }}
+          NEW_VERSION: ${{ steps.semver.outputs.new_version }}
+          BUMP_TYPE: ${{ steps.semver.outputs.bump_type }}
+          REPO: ${{ github.repository }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          pr_url="${REPO_URL}/pull/${PR_NUMBER}"
+          date_str=$(date -u '+%Y-%m-%d')
+
+          # Find previous tag for changelog diff link
+          prev_tag=$(git tag --list 'v[0-9]*' --sort=-version:refname | head -n1 || true)
+
+          # Categorise this PR into sections based on its labels
+          features=""
+          bug_fixes=""
+          documentation=""
+          infrastructure=""
+          dependencies=""
+          tests=""
+          config=""
+          breaking_changes=""
+
+          pr_entry="- ${PR_TITLE} ([#${PR_NUMBER}](${pr_url})) — @${PR_AUTHOR}"
+
+          # Assign to section(s) based on labels
+          if echo "$PR_LABELS" | grep -qw "breaking-change"; then
+            breaking_changes="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "feature"; then
+            features="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "bug-fix"; then
+            bug_fixes="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "documentation"; then
+            documentation="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "infrastructure"; then
+            infrastructure="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "dependencies"; then
+            dependencies="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "tests"; then
+            tests="$pr_entry"
+          fi
+          if echo "$PR_LABELS" | grep -qw "config"; then
+            config="$pr_entry"
+          fi
+
+          # If no section was matched, put it under the bump-type default
+          any_assigned=false
+          for var in "$breaking_changes" "$features" "$bug_fixes" "$documentation" "$infrastructure" "$dependencies" "$tests" "$config"; do
+            [[ -n "$var" ]] && { any_assigned=true; break; }
+          done
+          if ! $any_assigned; then
+            case "$BUMP_TYPE" in
+              major) breaking_changes="$pr_entry" ;;
+              minor) features="$pr_entry" ;;
+              *)     bug_fixes="$pr_entry" ;;
+            esac
+          fi
+
+          # Build the markdown body
+          notes="## What's Changed\n\n"
+
+          [[ -n "$breaking_changes" ]] && notes+="### 💥 Breaking Changes\n${breaking_changes}\n\n"
+          [[ -n "$features"         ]] && notes+="### 🚀 Features\n${features}\n\n"
+          [[ -n "$bug_fixes"        ]] && notes+="### 🐛 Bug Fixes\n${bug_fixes}\n\n"
+          [[ -n "$documentation"    ]] && notes+="### 📚 Documentation\n${documentation}\n\n"
+          [[ -n "$infrastructure"   ]] && notes+="### 🏗️ Infrastructure\n${infrastructure}\n\n"
+          [[ -n "$dependencies"     ]] && notes+="### 📦 Dependencies\n${dependencies}\n\n"
+          [[ -n "$tests"            ]] && notes+="### ✅ Tests\n${tests}\n\n"
+          [[ -n "$config"           ]] && notes+="### ⚙️ Configuration\n${config}\n\n"
+
+          notes+="---\n\n"
+          notes+="**Date:** ${date_str}  \n"
+          notes+="**PR:** [#${PR_NUMBER}](${pr_url})  \n"
+          notes+="**Contributor:** @${PR_AUTHOR}  \n\n"
+
+          if [[ -n "$prev_tag" ]]; then
+            notes+="**Full Changelog:** [${prev_tag}...v${NEW_VERSION}](${REPO_URL}/compare/${prev_tag}...v${NEW_VERSION})\n"
+          else
+            notes+="**Full Changelog:** [v${NEW_VERSION}](${REPO_URL}/releases/tag/v${NEW_VERSION})\n"
+          fi
+
+          # Write to a temp file (avoids shell quoting issues with gh release create)
+          printf '%b' "$notes" > /tmp/release_notes.md
+          echo "Release notes written to /tmp/release_notes.md"
+          cat /tmp/release_notes.md
+
+      # ------------------------------------------------------------------
+      # 4. Update VERSION file and create git tag
+      # ------------------------------------------------------------------
+      - name: Update VERSION file and tag
+        env:
+          NEW_VERSION: ${{ steps.semver.outputs.new_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Update VERSION file
+          echo "$NEW_VERSION" > VERSION
+          git add VERSION
+          git commit -m "chore: release v${NEW_VERSION} [skip ci]"
+          git push origin HEAD:main
+
+          # Create annotated tag
+          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
+          git push origin "v${NEW_VERSION}"
+
+      # ------------------------------------------------------------------
+      # 5. Create GitHub Release
+      # ------------------------------------------------------------------
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_VERSION: ${{ steps.semver.outputs.new_version }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh release create "v${NEW_VERSION}" \
+            --repo "$REPO" \
+            --title "v${NEW_VERSION}" \
+            --notes-file /tmp/release_notes.md

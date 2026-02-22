@@ -1,0 +1,136 @@
+name: Auto-Label Pull Requests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    name: Apply Labels
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply labels based on changed files and PR metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # ----------------------------------------------------------------
+          # Helper: ensure a label exists in the repo (create if absent)
+          # ----------------------------------------------------------------
+          ensure_label() {
+            local name="$1" color="$2" description="$3"
+            # Check whether label already exists
+            if ! gh label list --repo "$REPO" --json name --jq '.[].name' \
+                | grep -qxF "$name"; then
+              gh label create "$name" \
+                --repo "$REPO" \
+                --color "${color#\#}" \
+                --description "$description" || true
+            fi
+          }
+
+          # ----------------------------------------------------------------
+          # Define all managed labels
+          # ----------------------------------------------------------------
+          ensure_label "feature"         "#0E8A16" "New feature or enhancement"
+          ensure_label "bug-fix"         "#D93F0B" "Bug fix or hotfix"
+          ensure_label "documentation"   "#0075CA" "Documentation changes"
+          ensure_label "infrastructure"  "#E4E669" "Infrastructure / CI / Docker / Kubernetes changes"
+          ensure_label "dependencies"    "#0366D6" "Dependency updates"
+          ensure_label "tests"           "#BFD4F2" "Test additions or changes"
+          ensure_label "config"          "#C5DEF5" "Configuration / resource changes"
+          ensure_label "breaking-change" "#B60205" "Breaking change"
+
+          # ----------------------------------------------------------------
+          # Collect changed files in this PR
+          # ----------------------------------------------------------------
+          changed_files=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json files --jq '.files[].path')
+
+          echo "Changed files:"
+          echo "$changed_files"
+
+          labels_to_apply=()
+
+          # ----------------------------------------------------------------
+          # File-path based rules
+          # ----------------------------------------------------------------
+
+          # feature: new Kotlin source files added
+          if echo "$changed_files" | grep -qE '^src/main/kotlin/'; then
+            labels_to_apply+=("feature")
+          fi
+
+          # documentation: markdown or docs/
+          if echo "$changed_files" | grep -qE '(\.md$|^docs/)'; then
+            labels_to_apply+=("documentation")
+          fi
+
+          # infrastructure: Dockerfile, docker-compose, k8s/, .github/
+          if echo "$changed_files" | grep -qE \
+              '^(Dockerfile|docker-compose\.yml|k8s/|\.github/)'; then
+            labels_to_apply+=("infrastructure")
+          fi
+
+          # dependencies: Gradle build files
+          if echo "$changed_files" | grep -qE \
+              '^(build\.gradle\.kts|settings\.gradle\.kts|gradle\.properties|gradle/)'; then
+            labels_to_apply+=("dependencies")
+          fi
+
+          # tests: test source files
+          if echo "$changed_files" | grep -qE '^src/test/'; then
+            labels_to_apply+=("tests")
+          fi
+
+          # config: application resources
+          if echo "$changed_files" | grep -qE '^src/main/resources/'; then
+            labels_to_apply+=("config")
+          fi
+
+          # ----------------------------------------------------------------
+          # Title / branch / body based rules
+          # ----------------------------------------------------------------
+          lower_title="${PR_TITLE,,}"
+          lower_branch="${PR_HEAD_BRANCH,,}"
+
+          # bug-fix: branch or title contains fix/bug/hotfix
+          if echo "$lower_title $lower_branch" | grep -qE '(fix|bug|hotfix)'; then
+            labels_to_apply+=("bug-fix")
+          fi
+
+          # breaking-change: title or body contains "BREAKING CHANGE" or "!:"
+          combined_text="$PR_TITLE ${PR_BODY:-}"
+          if echo "$combined_text" | grep -qE '(BREAKING CHANGE|!:)'; then
+            labels_to_apply+=("breaking-change")
+          fi
+
+          # ----------------------------------------------------------------
+          # Apply all collected labels (deduplicated)
+          # ----------------------------------------------------------------
+          if [[ ${#labels_to_apply[@]} -eq 0 ]]; then
+            echo "No labels to apply."
+            exit 0
+          fi
+
+          # Build comma-separated unique label list
+          unique_labels=$(printf '%s\n' "${labels_to_apply[@]}" | sort -u | tr '\n' ',' | sed 's/,$//')
+          echo "Applying labels: $unique_labels"
+
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --add-label "$unique_labels"
