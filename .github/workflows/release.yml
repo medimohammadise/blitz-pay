@@ -132,9 +132,9 @@ PYEOF
           cat /tmp/release_notes.md
 
       # ------------------------------------------------------------------
-      # 4. Update VERSION file and create git tag
+      # 4. Update build.gradle.kts version and create git tag
       # ------------------------------------------------------------------
-      - name: Update VERSION file and tag
+      - name: Update build.gradle.kts version and tag
         env:
           NEW_VERSION: ${{ steps.semver.outputs.new_version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -144,9 +144,9 @@ PYEOF
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Update VERSION file
-          echo "$NEW_VERSION" > VERSION
-          git add VERSION
+          # Update the project version in build.gradle.kts
+          sed -i "s/^version = .*/version = \"${NEW_VERSION}\"/" build.gradle.kts
+          git add build.gradle.kts
           git commit -m "chore: release v${NEW_VERSION} [skip ci]"
           git push origin HEAD:main
 

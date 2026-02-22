@@ -67,7 +67,7 @@ Triggered when a PR is **merged into `main`**.
    - ✅ Tests
    - ⚙️ Configuration
 4. Includes metadata: date, PR link, contributor, and a Full Changelog diff link.
-5. Updates the `VERSION` file and pushes a `chore: release vX.Y.Z [skip ci]` commit.
+5. Updates the `version` property in `build.gradle.kts` and pushes a `chore: release vX.Y.Z [skip ci]` commit.
 6. Creates an annotated Git tag (`vX.Y.Z`).
 7. Creates a GitHub Release with the generated notes.
 
