@@ -1,6 +1,13 @@
 name: CI/CD Pipeline
 
 on:
+  workflow_call:
+    inputs:
+      gradle-args:
+        description: 'Arguments passed to Gradle test step'
+        required: false
+        type: string
+        default: '--info --stacktrace'
   push:
     branches:
       - main
@@ -29,4 +36,4 @@ jobs:
       contents: read
     uses: ./.github/workflows/test.yml
     with:
-      gradle-args: '--info --stacktrace'
+      gradle-args: ${{ inputs.gradle-args || '--info --stacktrace' }}

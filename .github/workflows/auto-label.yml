@@ -1,6 +1,36 @@
 name: Auto-Label Pull Requests
 
 on:
+  workflow_call:
+    inputs:
+      pr-number:
+        description: 'Pull request number'
+        required: false
+        type: string
+      pr-title:
+        description: 'Pull request title'
+        required: false
+        type: string
+      pr-body:
+        description: 'Pull request body'
+        required: false
+        type: string
+      pr-head-branch:
+        description: 'Source branch name'
+        required: false
+        type: string
+      labels-config:
+        description: 'Path to labels configuration file'
+        required: false
+        type: string
+        default: '.github/labels.yml'
+      repository:
+        description: 'Repository in owner/name format'
+        required: false
+        type: string
+    secrets:
+      github-token:
+        required: false
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -21,21 +51,22 @@ jobs:
 
       - name: Apply labels based on changed files and PR metadata
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
-          PR_HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.github-token || secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr-number || github.event.pull_request.number }}
+          PR_TITLE: ${{ inputs.pr-title || github.event.pull_request.title }}
+          PR_BODY: ${{ inputs.pr-body || github.event.pull_request.body }}
+          PR_HEAD_BRANCH: ${{ inputs.pr-head-branch || github.event.pull_request.head.ref }}
+          LABELS_CONFIG: ${{ inputs.labels-config || '.github/labels.yml' }}
+          REPO: ${{ inputs.repository || github.repository }}
         run: |
           set -euo pipefail
 
-          LABELS_CONFIG=".github/labels.yml"
+          LABELS_CONFIG="${LABELS_CONFIG:-.github/labels.yml}"
 
           # ----------------------------------------------------------------
           # Parse labels.yml into a JSON array for easy shell consumption
           # ----------------------------------------------------------------
-          labels_json=$(python3 -c "import json, yaml; data=yaml.safe_load(open('.github/labels.yml')); print(json.dumps(data['labels']))")
+          labels_json=$(python3 -c "import json, yaml; data=yaml.safe_load(open('${LABELS_CONFIG}')); print(json.dumps(data['labels']))")
 
           # ----------------------------------------------------------------
           # Helper: ensure a label exists in the repo (create if absent)
