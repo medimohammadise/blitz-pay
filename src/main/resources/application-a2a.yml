@@ -3,12 +3,6 @@ spring:
     activate:
       on-profile: a2a
 
-# Embabel native A2A transport profile.
-# This profile is intended to activate the embabel-agent-a2a module so
-# agent goals annotated with @AchievesGoal can be discovered/exported remotely.
-embabel:
-  agent:
-    a2a:
-      enabled: true
-    mcp:
-      enabled: true
+# The native Embabel A2A/MCP starters are activated by running with the "a2a"
+# profile. Goal methods explicitly marked with @Export(remote = true)
+# are exposed remotely over A2A (and MCP server integrations).

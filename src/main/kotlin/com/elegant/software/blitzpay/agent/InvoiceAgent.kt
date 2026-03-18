@@ -3,6 +3,7 @@ package com.elegant.software.blitzpay.agent
 import com.embabel.agent.api.annotation.AchievesGoal
 import com.embabel.agent.api.annotation.Action
 import com.embabel.agent.api.annotation.Agent
+import com.embabel.agent.api.annotation.Export
 import com.embabel.agent.api.common.OperationContext
 import com.embabel.agent.api.common.create
 import com.embabel.agent.domain.io.UserInput
@@ -153,6 +154,7 @@ class InvoiceAgent {
      * This action achieves the goal of the invoice processing workflow.
      */
     @AchievesGoal(description = "Invoice data has been extracted and validated from user input")
+    @Export(remote = true)
     @Action
     fun generateInvoiceResult(
         invoice: InvoiceExtracted,

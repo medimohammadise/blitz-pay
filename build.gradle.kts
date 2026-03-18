@@ -52,8 +52,8 @@ dependencies {
     implementation("com.embabel.agent:embabel-agent-starter:${property("embabelAgentVersion")}")
     implementation("com.embabel.agent:embabel-agent-starter-openai:${property("embabelAgentVersion")}")
     // Native A2A + MCP transport support (activated via Spring profiles)
-    implementation("com.embabel.agent:embabel-agent-a2a:${property("embabelAgentVersion")}")
-    implementation("com.embabel.agent:embabel-agent-mcp:${property("embabelAgentVersion")}")
+    implementation("com.embabel.agent:embabel-agent-starter-a2a:${property("embabelAgentVersion")}")
+    implementation("com.embabel.agent:embabel-agent-starter-mcpserver:${property("embabelAgentVersion")}")
 
 
     runtimeOnly("org.postgresql:postgresql")
