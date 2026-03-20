@@ -28,6 +28,7 @@ spring:
 server:
   tomcat:
     max-threads: 50
+
 management:
   endpoints:
     web:
@@ -36,6 +37,7 @@ management:
   endpoint:
     metrics:
       enabled: true
+
 springdoc:
   show-actuator: true
   swagger-ui:
@@ -44,18 +46,38 @@ springdoc:
         url: /v3/api-docs/Invoice
       - name: QRPay
         url: /v3/api-docs/QRPay
+
 truelayer:
   apiBase: ${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}
   accessToken: ${TRUELAYER_ACCESS_TOKEN:dummy-access-token}
   webhookJku: ${TRUELAYER_WEBHOOK_JKU:http://localhost:8080/.well-known/jwks.json}
-  # SDK configuration
-  clientId: ${TRUELAYER_CLIENT_ID}
-  clientSecret: ${TRUELAYER_CLIENT_SECRET}
-  keyId: ${TRUELAYER_KEY_ID}
-  privateKeyPath: ${TRUELAYER_PRIVATE_KEY_PATH}
+  clientId: ${TRUELAYER_CLIENT_ID:}
+  clientSecret: ${TRUELAYER_CLIENT_SECRET:}
+  keyId: ${TRUELAYER_KEY_ID:}
+  privateKeyPath: ${TRUELAYER_PRIVATE_KEY_PATH:}
   environment: ${TRUELAYER_ENV:sandbox}
   httpLogs: ${TRUELAYER_HTTP_LOGS:false}
-  merchantAccountId: ${TRUELAYER_MERCHANT_ACCOUNT_ID}
+  merchantAccountId: ${TRUELAYER_MERCHANT_ACCOUNT_ID:}
   webhooks:
-    environment: sandbox ** # "sandbox" or "live" */
-    maxSkew: PT60M    #  ** Max accepted age of the webhook timestamp header, e.g. PT5M */
+    environment: ${TRUELAYER_WEBHOOK_ENV:sandbox}
+    maxSkew: ${TRUELAYER_WEBHOOK_MAX_SKEW:PT60M}
+
+invoice-agent:
+  enabled: ${INVOICE_AGENT_ENABLED:false}
+  model: ${INVOICE_AGENT_MODEL:gpt-4.1-mini}
+  base-url: ${INVOICE_AGENT_BASE_URL:http://localhost:8080}
+  a2a:
+    port: ${INVOICE_AGENT_A2A_PORT:8099}
+    path: ${INVOICE_AGENT_A2A_PATH:/a2a/invoice}
+  card:
+    id: ${INVOICE_AGENT_CARD_ID:invoice-agent}
+    name: ${INVOICE_AGENT_CARD_NAME:Invoice Agent}
+    description: ${INVOICE_AGENT_CARD_DESCRIPTION:Invoice A2A agent backed by the existing invoice module}
+    version: ${INVOICE_AGENT_CARD_VERSION:1.0.0}
+
+ai:
+  koog:
+    openai:
+      enabled: ${KOOG_OPENAI_ENABLED:false}
+      api-key: ${OPENAI_API_KEY:}
+      base-url: ${OPENAI_BASE_URL:https://api.openai.com}

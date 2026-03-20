@@ -19,6 +19,15 @@ java {
 
 repositories {
     mavenLocal()
+
+    val mavenMirrorUrl = providers.gradleProperty("mavenMirrorUrl")
+        .orElse(providers.environmentVariable("MAVEN_MIRROR_URL"))
+        .orNull
+
+    if (!mavenMirrorUrl.isNullOrBlank()) {
+        maven { url = uri(mavenMirrorUrl) }
+    }
+
     mavenCentral()
     maven { url = uri("https://repo.spring.io/snapshot") }
 }
@@ -36,6 +45,20 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("org.springframework.modulith:spring-modulith-starter-jpa")
+
+    val enableKoog = providers.gradleProperty("enableKoog")
+        .orElse("false")
+        .get()
+        .toBoolean()
+
+    if (enableKoog) {
+        implementation("ai.koog:koog-spring-boot-starter:${property("koogVersion")}")
+        implementation("ai.koog:agents-features-a2a-server:${property("koogVersion")}")
+        implementation("ai.koog:a2a-server:${property("koogVersion")}")
+        implementation("ai.koog:a2a-transport-server-jsonrpc-http:${property("koogVersion")}")
+        implementation("io.ktor:ktor-client-okhttp-jvm:${property("ktorVersion")}")
+        implementation("io.ktor:ktor-server-netty:${property("ktorVersion")}")
+    }
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:${property("springdocVersion")}")
     // TrueLayer Java SDK
     implementation("com.truelayer:truelayer-java:${property("truelayerJavaVersion")}")
