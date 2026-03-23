@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.spring.cloud.contract)
     alias(libs.plugins.kotlin.jpa)
 }
 
@@ -73,6 +74,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+    testImplementation("org.springframework.cloud:spring-cloud-starter-contract-verifier")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -81,6 +83,7 @@ dependencies {
 
 dependencyManagement {
     imports {
+        mavenBom("org.springframework.cloud:spring-cloud-contract-dependencies:${libs.versions.spring.cloud.contract.get()}")
         mavenBom("org.springframework.modulith:spring-modulith-bom:${libs.versions.spring.modulith.get()}")
     }
 }
@@ -99,4 +102,9 @@ allOpen {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+contracts {
+    testMode.set(org.springframework.cloud.contract.verifier.config.TestMode.WEBTESTCLIENT)
+    baseClassForTests.set("com.elegant.software.blitzpay.contract.ContractVerifierBase")
 }

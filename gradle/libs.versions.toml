@@ -4,6 +4,7 @@ kotlin = "2.3.20"
 kotlin-jpa = "2.3.20"
 spring-boot = "4.0.4"
 spring-dependency-management = "1.1.7"
+spring-cloud-contract = "5.0.2"
 dr-jskill = "2026_02_19-a951a5e"
 spring-modulith = "2.1.0-M3"
 springdoc = "3.0.2"
@@ -33,3 +34,4 @@ kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotl
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin-jpa" }
 spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
+spring-cloud-contract = { id = "org.springframework.cloud.contract", version.ref = "spring-cloud-contract" }
