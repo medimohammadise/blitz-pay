@@ -1,38 +1,55 @@
 package com.elegant.software.blitzpay.contract
 
 import com.elegant.software.blitzpay.payments.QuickpayApplication
-import io.restassured.module.webtestclient.RestAssuredWebTestClient
+import com.elegant.software.blitzpay.payments.truelayer.api.PaymentRequested
+import com.elegant.software.blitzpay.payments.truelayer.api.PaymentResult
+import com.elegant.software.blitzpay.payments.truelayer.outbound.PaymentService
+import com.elegant.software.blitzpay.payments.truelayer.support.JwksService
+import com.truelayer.java.TrueLayerClient
 import org.junit.jupiter.api.BeforeEach
-import org.springframework.beans.factory.annotation.Autowired
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.reactive.server.WebTestClient
+import java.net.URI
 
 @SpringBootTest(
     classes = [QuickpayApplication::class],
-    properties = [
-        "truelayer.clientId=test-client-id",
-        "truelayer.clientSecret=test-client-secret",
-        "truelayer.keyId=test-key-id",
-        "truelayer.privateKeyPath=truelayer-test-private-key.pem",
-        "truelayer.merchantAccountId=test-merchant-account-id",
-        "spring.autoconfigure.exclude=" +
-            "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration," +
-            "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration," +
-            "org.springframework.boot.data.jpa.autoconfigure.JpaRepositoriesAutoConfiguration," +
-            "org.springframework.modulith.events.jpa.JpaEventPublicationAutoConfiguration," +
-            "org.springframework.modulith.events.config.EventPublicationAutoConfiguration"
-    ],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
-@AutoConfigureWebTestClient
+@ActiveProfiles("contract-test")
 abstract class ContractVerifierBase {
 
-    @Autowired
-    private lateinit var webTestClient: WebTestClient
+    @LocalServerPort
+    private var port: Int = 0
+
+    protected lateinit var webTestClient: WebTestClient
+
+    @MockitoBean
+    private lateinit var paymentService: PaymentService
+
+    @MockitoBean
+    private lateinit var trueLayerClient: TrueLayerClient
+
+    @MockitoBean
+    private lateinit var jwksService: JwksService
 
     @BeforeEach
     fun setupRestAssured() {
-        RestAssuredWebTestClient.webTestClient(webTestClient)
+        whenever(paymentService.startPayment(any())).thenAnswer { invocation ->
+            val request = invocation.getArgument<PaymentRequested>(0)
+            PaymentResult(
+                paymentRequestId = requireNotNull(request.paymentRequestId),
+                orderId = request.orderId,
+                paymentId = "contract-test-payment-id",
+                redirectURI = URI.create("https://contract-test.blitzpay.local/payments/${request.paymentRequestId}")
+            )
+        }
+        webTestClient = WebTestClient.bindToServer()
+            .baseUrl("http://localhost:$port")
+            .build()
     }
 }

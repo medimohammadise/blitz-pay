@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.spring.boot)
     alias(libs.plugins.spring.dependency.management)
-    alias(libs.plugins.spring.cloud.contract)
     alias(libs.plugins.kotlin.jpa)
 }
 
@@ -20,6 +19,13 @@ java {
 
 val mavenProxyUrl = providers.gradleProperty("mavenProxyUrl").orNull
 val skillsJarsRepositoryUrl = providers.gradleProperty("skillsJarsRepositoryUrl").orNull
+val sourceSets = the<org.gradle.api.tasks.SourceSetContainer>()
+val contractTestSourceSet = sourceSets.create("contractTest") {
+    java.setSrcDirs(listOf("src/contractTest/kotlin"))
+    resources.setSrcDirs(listOf("src/contractTest/resources"))
+    compileClasspath += sourceSets["main"].output + configurations["testCompileClasspath"]
+    runtimeClasspath += output + compileClasspath + configurations["testRuntimeClasspath"]
+}
 
 repositories {
     mavenLocal()
@@ -74,7 +80,6 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
     testImplementation("org.springframework.modulith:spring-modulith-starter-test")
-    testImplementation("org.springframework.cloud:spring-cloud-starter-contract-verifier")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")
     testImplementation("org.testcontainers:testcontainers-postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -83,9 +88,16 @@ dependencies {
 
 dependencyManagement {
     imports {
-        mavenBom("org.springframework.cloud:spring-cloud-contract-dependencies:${libs.versions.spring.cloud.contract.get()}")
         mavenBom("org.springframework.modulith:spring-modulith-bom:${libs.versions.spring.modulith.get()}")
     }
+}
+
+configurations.named("contractTestImplementation") {
+    extendsFrom(configurations.testImplementation.get())
+}
+
+configurations.named("contractTestRuntimeOnly") {
+    extendsFrom(configurations.testRuntimeOnly.get())
 }
 
 kotlin {
@@ -104,7 +116,15 @@ tasks.withType<Test> {
     useJUnitPlatform()
 }
 
-contracts {
-    testMode.set(org.springframework.cloud.contract.verifier.config.TestMode.WEBTESTCLIENT)
-    baseClassForTests.set("com.elegant.software.blitzpay.contract.ContractVerifierBase")
+tasks.register<Test>("contractTest") {
+    description = "Runs Boot 4-compatible contract tests."
+    group = "verification"
+    testClassesDirs = contractTestSourceSet.output.classesDirs
+    classpath = contractTestSourceSet.runtimeClasspath
+    shouldRunAfter(tasks.named("test"))
+    useJUnitPlatform()
+}
+
+tasks.named("check") {
+    dependsOn("contractTest")
 }
