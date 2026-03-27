@@ -1,0 +1,65 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: 'Docker image tag to deploy (e.g. v0.2.2)'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  deploy:
+    runs-on: self-hosted  # Requires a runner with network access to https://myserver:6443
+    environment: ${{ inputs.environment }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # helm and kubectl must be pre-installed on the self-hosted runner.
+      # If the runner's kubeconfig is not pre-configured for the kind cluster,
+      # uncomment the step below and add KUBECONFIG as a GitHub Actions secret
+      # (base64-encoded output of: kind get kubeconfig --name <cluster-name> | base64)
+      #
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > /tmp/kubeconfig                                  
+          chmod 600 /tmp/kubeconfig
+
+      - name: Verify cluster connectivity
+        env:
+          KUBECONFIG: /tmp/kubeconfig
+        run: kubectl --kubeconfig=/Users/mehdi/MyProject/elegant-infra-engine/components/all/blitz-cluster-kubeconfig cluster-info --request-timeout=10s
+
+      - name: Deploy to ${{ inputs.environment }}
+        env:
+          KUBECONFIG: /tmp/kubeconfig
+        run: |
+          helm upgrade --install blitzpay ./helm/blitzpay \
+            --namespace blitzpay-${{ inputs.environment == 'production' && 'prod' || 'staging' }} \
+            --create-namespace \
+            --values ./helm/blitzpay/values.yaml \
+            --values ./helm/blitzpay/values-${{ inputs.environment == 'production' && 'prod' || 'staging' }}.yaml \
+            --set image.tag=${{ inputs.image-tag }} \
+            --wait \
+            --timeout 5m
+
+      - name: Verify rollout
+        env:
+          KUBECONFIG: /tmp/kubeconfig
+        run: |
+          kubectl rollout status deployment/blitzpay \
+            --namespace blitzpay-${{ inputs.environment == 'production' && 'prod' || 'staging' }} \
+            --timeout=5m
+      - name: Cleanup kubeconfig
+        if: always()
+        run: rm -f /tmp/kubeconfig
