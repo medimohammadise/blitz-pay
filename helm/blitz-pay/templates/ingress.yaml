@@ -9,12 +9,6 @@ metadata:
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    {{- if .Values.ingress.blockActuator }}
-    nginx.ingress.kubernetes.io/server-snippet: |
-      location /actuator {
-        return 403;
-      }
-    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.ingressClassName }}
   tls:
