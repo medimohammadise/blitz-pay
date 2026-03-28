@@ -65,6 +65,10 @@ Because Kotlin lacks `package-info.java`, module metadata is declared via a dedi
 - **Contract tests** (`src/contractTest/kotlin`) — handwritten `WebTestClient` tests. The `contract-test` profile excludes DataSource, JPA, and Modulith event persistence auto-configuration; TrueLayer beans are mocked. Groovy contracts live in `src/contractTest/resources/contracts/`.
 - **Module verification** — maintain `ApplicationModules.of(...).verify()` tests. Use `@ApplicationModuleTest` for single-module integration tests.
 
+## Contributor Guide
+
+Full contribution conventions — commit style, architecture principles, Spring Boot / Modulith / JPA / Liquibase best practices, CI/CD setup, and coding convention references — are in **`CONTRIBUTING.md`**.
+
 ## Commit Convention
 
 Semantic commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`. Summaries: short, imperative, specific. One semantic commit per logical change; squash fixup commits before merging.

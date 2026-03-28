@@ -46,11 +46,11 @@ All workflows in this project are **thin delegators** — they define triggers a
 2. `release` — delegates to `backend-build.yml`; builds and pushes the Docker image to the configured registry.
 
 **Key inputs forwarded:**
-- `image-name`: `blitzpay`
+- `image-name`: `${{ vars.APP_NAME }}` (e.g. `blitz-pay`)
 - `image-tag`: `${{ github.ref_name }}` (the release tag, e.g. `v1.2.3`)
 - `registry`: `${{ vars.CONTAINER_REGISTRY }}`
 
-**Required repository variable:** `CONTAINER_REGISTRY` — e.g. `ghcr.io/medimohammadise`.
+**Required repository variables:** `APP_NAME` and `CONTAINER_REGISTRY` — e.g. `blitz-pay` and `ghcr.io/medimohammadise`.
 
 ---
 
@@ -67,18 +67,16 @@ All workflows in this project are **thin delegators** — they define triggers a
 **Runner:** Self-hosted — requires network access to the Kubernetes API server (`https://myserver:6443`) and pre-installed `helm` + `kubectl`.
 
 **What it does:**
-1. Decodes `KUBECONFIG_B64` secret into `/tmp/kubeconfig`.
-2. Verifies cluster connectivity.
-3. Runs `helm upgrade --install blitzpay ./helm/blitzpay` with environment-specific values files:
+1. Verifies cluster connectivity.
+2. Runs `helm upgrade --install $APP_NAME ./helm/$APP_NAME` with environment-specific values files:
    - `values.yaml` (base)
    - `values-staging.yaml` or `values-prod.yaml`
-4. Sets `image.tag` to the provided input.
-5. Waits up to 5 minutes for rollout, then verifies with `kubectl rollout status`.
-6. Always cleans up `/tmp/kubeconfig` on completion.
+3. Sets `image.tag` to the provided input.
+4. Waits up to 5 minutes for rollout, then verifies with `kubectl rollout status`.
 
 **Namespaces:** `blitzpay-staging` / `blitzpay-prod`
 
-**Required secret:** `KUBECONFIG_B64` — base64-encoded kubeconfig scoped to the target cluster.
+**Note:** Kubeconfig is pre-configured on the self-hosted runner — no secret needed.
 
 ---
 
@@ -165,9 +163,14 @@ Cleanup workflows are intentionally not badged — they add noise without contri
 
 | Name | Type | Used by | Description |
 |---|---|---|---|
-| `JAVA_VERSION` | Variable | `ci.yml` | JDK version for Gradle builds |
-| `CONTAINER_REGISTRY` | Variable | `cd.yml` | Registry host, e.g. `ghcr.io/medimohammadise` |
-| `KUBECONFIG_B64` | Secret | `deploy.yml` | Base64-encoded kubeconfig for k8s cluster |
+| `APP_NAME` | Variable | `cd.yml`, `deploy.yml` | Application name — must match `rootProject.name` in `settings.gradle.kts` |
+| `JAVA_VERSION` | Variable | `ci.yml`, `cd.yml` | JDK version for Gradle builds |
+| `CONTAINER_REGISTRY` | Variable | `cd.yml` | Registry host + org, e.g. `ghcr.io/medimohammadise` |
 | `QODANA_TOKEN` | Secret | `ci.yml` | Qodana Cloud token for code quality reports |
 | `DTRACK_URL` | Secret | `ci.yml` | Dependency-Track base URL (optional) |
 | `DTRACK_API_KEY` | Secret | `ci.yml` | Dependency-Track API key (optional) |
+
+To set all of these at once, run:
+```bash
+.github/scripts/setup-github-env.sh
+```

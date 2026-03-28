@@ -90,6 +90,29 @@ Do not invent new labels casually. Reuse the repository's existing label taxonom
 
 When changes affect release notes, changelog generation, or version semantics, keep commit messages and PR descriptions clear enough to support downstream automation.
 
+## CI/CD Setup
+
+GitHub Actions workflows require repository variables and secrets to be configured before
+they can run. All required values are documented and set via a single script:
+
+```bash
+.github/scripts/setup-github-env.sh
+```
+
+**Run this script when:**
+- Bootstrapping the repository for the first time
+- Forking this repo to a new GitHub account
+- Adding a new workflow variable or secret (update the script first, then re-run it)
+
+The script uses the `gh` CLI. Authenticate first with `gh auth login`.
+
+For a full list of what each variable/secret does, see [`.github/workflows/README.md`](.github/workflows/README.md).
+
+**Adding a new variable or secret to a workflow:**
+1. Add the `${{ vars.NAME }}` or `${{ secrets.NAME }}` reference in the workflow file
+2. Add a corresponding `set_var` or `set_secret` call in `.github/scripts/setup-github-env.sh`
+3. Update the table in `.github/workflows/README.md`
+
 ## Agent Guidance
 
 AI agents working in this repository should:
