@@ -34,6 +34,7 @@ jobs:
   qodana_code_quality:
     name: qodana
     needs: test
+    if: false # temporarily disabled to verify watchdog functionality and codana docker issue
     permissions:
       contents: write
       pull-requests: write
@@ -45,6 +46,7 @@ jobs:
   sbom-upload:
     name: dependency track & SBOM upload
     needs: test
+    if: false # temporarily disabled to verify watchdog functionality
     permissions:
       actions: write
       contents: read
