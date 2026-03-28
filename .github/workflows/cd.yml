@@ -2,9 +2,8 @@ name: CD pipeline
 
 on:
   release:
-     types:
-       - published
-       - prereleased
+    types:
+      - published
 
 jobs:
   ci:
