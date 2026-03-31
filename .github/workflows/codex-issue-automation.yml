@@ -1,0 +1,13 @@
+name: Call Issue Spec Automation
+on:
+  repository_dispatch:
+    types:
+      - project_status_change
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+jobs:
+  call-automation:
+    uses: medimohammadise/elegant-ci-cd-pipeline/.github/workflows/codex-github-issue-spec-kit-automation.yml@main
+    secrets: inherit
