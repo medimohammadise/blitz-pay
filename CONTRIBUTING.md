@@ -39,6 +39,7 @@ For technology-specific patterns, refer to the dedicated best practices document
 | Docker (multi-stage builds, layer caching, `.dockerignore`) | [`reference/docker-best-practices.md`](reference/docker-best-practices.md) |
 | socat (install, run modes, debug `T` state, systemd, NodePort bridging) | [`reference/utils/socat-guide.md`](reference/utils/socat-guide.md) |
 | Kubernetes ingress troubleshooting (kind, nginx, TLS, NodePort) | [`reference/k8s-ingress-troubleshooting/`](reference/k8s-ingress-troubleshooting/) |
+| Structured logging (JSON output, correlation IDs, MDC, StructuredArguments) | [`specs/000-structured-logging/spec.md`](specs/000-structured-logging/spec.md) |
 
 ## File Naming
 

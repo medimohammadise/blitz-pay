@@ -17,6 +17,18 @@ Behavior changes require corresponding automated test updates. Reviewers should 
 ### V. Documentation as Policy
 Repository standards that affect contribution or review are part of repository governance and must be recorded in this constitution. Code comments and feature specs may support the rule but do not replace it.
 
+### VI. Structured Logging
+All application logging MUST use structured JSON output in production. Plain text logs are not acceptable for deployed environments. The standard requires:
+
+1. **JSON format by default** — All log output MUST be structured JSON (via Spring Boot native `logging.structured.format.console` or `logstash-logback-encoder`). Each log line MUST be a single-line JSON object containing at minimum: `timestamp`, `level`, `logger_name`, `message`, and all active MDC entries.
+2. **Correlation IDs on every request** — Every inbound HTTP request MUST carry a correlation ID propagated through MDC to all log lines produced during that request's lifecycle. Inbound `X-Correlation-ID` headers are honoured; requests without one receive a generated UUID.
+3. **Reactive context propagation** — MDC context, including correlation IDs, MUST propagate across reactive thread boundaries using Micrometer Context Propagation so that WebFlux pipelines do not lose trace context.
+4. **Unified logging facade** — All production Kotlin classes MUST use `KotlinLogging.logger {}` (from `kotlin-logging-jvm`). Direct `LoggerFactory.getLogger()` usage is prohibited.
+5. **Structured arguments for domain context** — Log statements carrying domain-specific data (e.g., `paymentId`, `invoiceId`, `amount`) SHOULD use `StructuredArguments.keyValue()` or the kotlin-logging equivalent so values appear as discrete, queryable JSON fields rather than interpolated message text.
+6. **Development profile exception** — A `dev` or `local` Spring profile MAY provide human-readable console output for local development. Production and CI environments MUST use JSON.
+
+**Rationale**: Structured JSON logs with correlation IDs are the industry standard for production observability. They enable parsing by tools like ELK, Loki, Datadog, and Splunk without custom grok patterns, provide consistent context across modules, and dramatically reduce incident resolution time.
+
 ## Quality Standards
 
 - Fixture files must use non-sensitive representative data only.
@@ -93,4 +105,4 @@ This standard ensures:
 
 This constitution supersedes local conventions for fixture reuse and review standards. Amendments must update this file and keep `AGENTS.md` aligned with contributor-facing policy. Reviewers and implementers are expected to verify compliance during normal code review.
 
-**Version**: 1.1.0 | **Ratified**: 2026-03-25 | **Last Amended**: 2026-03-25
+**Version**: 1.2.0 | **Ratified**: 2026-03-25 | **Last Amended**: 2026-04-04
