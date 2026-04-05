@@ -60,7 +60,7 @@ class MobileLogsForwarderService(
             .contentType(MediaType.APPLICATION_JSON)
 
         if (!props.authHeader.isNullOrBlank() && !props.authValue.isNullOrBlank()) {
-            spec.header(props.authHeader, props.authValue)
+            spec.header(props.authHeader!!, props.authValue!!)
         }
 
         spec.bodyValue(body)

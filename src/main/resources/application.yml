@@ -71,7 +71,7 @@ observability:
     logs-endpoint: ${OTLP_LOGS_ENDPOINT:http://localhost:3100/otlp}
     auth-header: ${OTLP_AUTH_HEADER:}
     auth-value: ${OTLP_AUTH_VALUE:}
-    service-namespace: ${OTLP_SERVICE_NAMESPACE:blitzpay}
+    service-namespace: ${OTLP_SERVICE_NAMESPACE:observability}
     max-events-per-request: ${OTLP_MAX_EVENTS:100}
 
 truelayer:
