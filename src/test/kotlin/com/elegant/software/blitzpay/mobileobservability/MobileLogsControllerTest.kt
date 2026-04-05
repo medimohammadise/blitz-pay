@@ -1,6 +1,7 @@
 package com.elegant.software.blitzpay.mobileobservability
 
 import com.elegant.software.blitzpay.mobileobservability.api.MobileLogsForwarder
+import com.elegant.software.blitzpay.payments.QuickpayApplication
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.verify
@@ -8,10 +9,12 @@ import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest
 import org.springframework.http.MediaType
+import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.web.reactive.server.WebTestClient
 
 @WebFluxTest(MobileLogsController::class)
+@ContextConfiguration(classes = [QuickpayApplication::class])
 class MobileLogsControllerTest {
 
     @Autowired

@@ -21,8 +21,9 @@ interface MobileLogsForwarder {
 data class MobileLogsRequest(
     @field:Valid
     val context: MobileContext? = null,
+    @field:Valid
     @field:NotEmpty
-    val events: List<@Valid MobileEvent>
+    val events: List<MobileEvent>
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
