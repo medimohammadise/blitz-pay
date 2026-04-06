@@ -99,10 +99,6 @@ setup_vars() {
   # Used by: deploy.yml (OTLP_LOGS_ENDPOINT). Example: http://loki.observability:3100/otlp
   set_var OTLP_LOGS_ENDPOINT ""
 
-  # Service account used by deploy.yml to generate short-lived tokens at deploy time.
-  set_var K8S_SA_NAME      "blitzpay-deploy"
-  set_var K8S_SA_NAMESPACE "kube-system"
-
   echo ""
 }
 
@@ -145,12 +141,13 @@ setup_k8s() {
   gh secret set K8S_CA_CERT --body "$ca_b64" --repo "$REPO"
   echo "           Set (fetched from $host_port)."
 
-  # --- Service account for deploy-time token generation ---
+  # --- Service account + long-lived token ---
   local sa_name="blitzpay-deploy"
   local sa_ns="kube-system"
+  local secret_name="${sa_name}-token"
 
   echo ""
-  echo "  Creating service account $sa_ns/$sa_name for deploy-time token generation..."
+  echo "  Creating service account $sa_ns/$sa_name ..."
 
   kubectl get sa "$sa_name" -n "$sa_ns" &>/dev/null || \
     kubectl create sa "$sa_name" -n "$sa_ns"
@@ -160,7 +157,33 @@ setup_k8s() {
       --clusterrole=cluster-admin \
       --serviceaccount="$sa_ns:$sa_name"
 
-  echo "  Service account ready. deploy.yml will generate fresh tokens at each deploy."
+  # Create a Secret-based long-lived token (works on all K8S versions)
+  if ! kubectl get secret "$secret_name" -n "$sa_ns" &>/dev/null; then
+    kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $secret_name
+  namespace: $sa_ns
+  annotations:
+    kubernetes.io/service-account.name: $sa_name
+type: kubernetes.io/service-account-token
+EOF
+    echo "  Created secret $sa_ns/$secret_name"
+    # Wait for the token controller to populate the token
+    sleep 2
+  fi
+
+  local token
+  token=$(kubectl get secret "$secret_name" -n "$sa_ns" -o jsonpath='{.data.token}' | base64 -d)
+
+  if [ -z "$token" ]; then
+    echo "  ERROR: token not populated in secret $secret_name"
+    exit 1
+  fi
+
+  gh secret set K8S_TOKEN --body "$token" --repo "$REPO"
+  echo "  [secret] K8S_TOKEN — extracted from secret $sa_ns/$secret_name"
   echo ""
 }
 
