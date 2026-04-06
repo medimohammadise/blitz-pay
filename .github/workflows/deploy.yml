@@ -36,19 +36,20 @@ jobs:
           K8S_SA_NAME: ${{ vars.K8S_SA_NAME || 'blitzpay-deploy' }}
           K8S_SA_NAMESPACE: ${{ vars.K8S_SA_NAMESPACE || 'kube-system' }}
         run: |
+          # Generate a fresh short-lived token BEFORE touching the kubeconfig.
+          # This uses the runner's existing local kubectl access.
+          TOKEN=$(kubectl create token "$K8S_SA_NAME" \
+            -n "$K8S_SA_NAMESPACE" \
+            --duration=15m)
+
+          # Now build a standalone kubeconfig for the deploy
           mkdir -p "$HOME/.kube"
           echo "$K8S_CA_CERT" | base64 -d > "$HOME/.kube/ca.crt"
 
-          # Build a kubeconfig targeting the remote/local cluster
           kubectl config set-cluster deploy-cluster \
             --server="$K8S_SERVER" \
             --certificate-authority="$HOME/.kube/ca.crt" \
             --embed-certs=true
-
-          # Generate a fresh short-lived token from the runner's existing kubectl access
-          TOKEN=$(kubectl create token "$K8S_SA_NAME" \
-            -n "$K8S_SA_NAMESPACE" \
-            --duration=15m)
 
           kubectl config set-credentials deploy-user \
             --token="$TOKEN"
