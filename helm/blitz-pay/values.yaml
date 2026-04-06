@@ -4,7 +4,7 @@
 replicaCount: 1
 
 image:
-  repository: ghcr.io/ellegant-software/blitz-pay
+  repository: ghcr.io/elegant-software/blitz-pay
   tag: latest
   pullPolicy: IfNotPresent
   pullSecrets: []  # e.g. [ghcr-pull-secret]
