@@ -1,0 +1,33 @@
+{
+  "scenarioId": "invoice-generation-activity-canonical",
+  "description": "Canonical invoice generation activity persisted with two recipients and pending payment status.",
+  "domain": "invoice-generation-activity",
+  "tags": [
+    "persistence",
+    "invoice",
+    "payment-status"
+  ],
+  "command": {
+    "invoiceNumber": "INV-2026-0042",
+    "createdAt": "2026-04-11T08:15:30Z",
+    "amount": 1499.95,
+    "currency": "EUR",
+    "recipients": [
+      {
+        "name": "Alice Buyer",
+        "email": "alice.buyer@example.com"
+      },
+      {
+        "name": "Bob Finance",
+        "email": "bob.finance@example.com"
+      }
+    ],
+    "paymentStatus": "PENDING"
+  },
+  "expectations": {
+    "amountMinorUnits": 149995,
+    "recipientCount": 2,
+    "firstRecipientEmail": "alice.buyer@example.com",
+    "secondRecipientEmail": "bob.finance@example.com"
+  }
+}
