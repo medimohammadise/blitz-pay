@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Kotlin 2.3.20 on Java 25, Spring Boot 4.0.4, Spring WebFlux (reactive)
 - Spring Modulith for module enforcement and cross-module event publishing
-- PostgreSQL 16 with Hibernate (`ddl-auto: update`, no migration framework)
+- PostgreSQL 16 with Hibernate validation + Liquibase-managed schema migrations
 - TrueLayer Java SDK for payment gateway integration
 - Mustang Project + Flying Saucer for ZUGFeRD/Factur-X invoice generation
 
