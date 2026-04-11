@@ -7,15 +7,13 @@ See `CONTRIBUTING.md` for the link to this document.
 
 ## Current State
 
-This project currently uses **Hibernate `ddl-auto: update`** for schema management.
-This is acceptable in early development but must be migrated to Liquibase before going
-to production with real data.
+This project now uses **Liquibase** to own schema changes and **Hibernate `ddl-auto: validate`**
+to verify mappings at startup.
 
-`ddl-auto: update` risks:
-- Silent column/table drops on rename
-- No rollback capability
-- No audit trail of schema changes
-- Cannot replay schema history on a fresh database reproducibly
+Use Liquibase for every schema change:
+- Add a new versioned changeset, never rely on Hibernate to mutate schema
+- Keep rollback instructions with each changeset
+- Preserve an auditable, replayable schema history across environments
 
 ---
 
