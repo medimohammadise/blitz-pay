@@ -20,7 +20,7 @@ set -euo pipefail
 # ─── SHARED HELPERS ──────────────────────────────────────────────────────────
 
 ORG="elegant-software"
-VISIBILITY="public"
+VISIBILITY="all"
 
 set_org_secret() {
   local name="$1"
