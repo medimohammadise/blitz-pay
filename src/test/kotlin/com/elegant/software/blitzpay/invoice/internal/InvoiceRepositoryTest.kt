@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import com.elegant.software.blitzpay.payments.QuickpayApplication
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase
+import org.springframework.boot.persistence.autoconfigure.EntityScan
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -16,8 +18,10 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.function.Consumer
 
-@DataJpaTest
+@DataJpaTest(properties = ["spring.jpa.hibernate.ddl-auto=create-drop", "spring.liquibase.enabled=false"])
 @ContextConfiguration(classes = [QuickpayApplication::class])
+@EnableJpaRepositories(basePackages = ["com.elegant.software.blitzpay"])
+@EntityScan(basePackages = ["com.elegant.software.blitzpay"])
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
 class InvoiceRepositoryTest {

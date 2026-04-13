@@ -8,18 +8,22 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.FetchType
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
+import jakarta.persistence.PostLoad
+import jakarta.persistence.PostPersist
 import jakarta.persistence.PrePersist
 import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.UUID
+import org.springframework.data.domain.Persistable
 
 @Entity
 @Table(name = "invoices")
 class Invoice(
     @Id
     @Column(name = "id", nullable = false, updatable = false)
-    val id: UUID = UUID.randomUUID(),
+    private val id: UUID = UUID.randomUUID(),
 
     @Column(name = "created_at", nullable = false, updatable = false)
     var createdAt: Instant = Instant.now(),
@@ -30,6 +34,10 @@ class Invoice(
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 20)
     var paymentStatus: PaymentStatus,
+) : Persistable<UUID> {
+
+    @Transient
+    private var isNew: Boolean = true
 
     @OneToMany(
         mappedBy = "invoice",
@@ -38,9 +46,19 @@ class Invoice(
         fetch = FetchType.LAZY
     )
     private val recipientEntities: MutableList<InvoiceRecipient> = mutableListOf()
-) {
+
     init {
         require(amount >= BigDecimal.ZERO) { "amount must be non-negative" }
+    }
+
+    override fun getId(): UUID = id
+
+    override fun isNew(): Boolean = isNew
+
+    @PostPersist
+    @PostLoad
+    fun markNotNew() {
+        isNew = false
     }
 
     val recipients: List<InvoiceRecipient>
