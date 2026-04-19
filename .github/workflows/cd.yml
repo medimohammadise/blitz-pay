@@ -4,6 +4,9 @@ on:
   release:
     types:
       - published
+      - prereleased
+      - edited
+
 
 jobs:
   ci:
