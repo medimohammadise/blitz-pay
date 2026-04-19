@@ -66,6 +66,8 @@ springdoc:
         url: /api-docs/Stripe
       - name: Braintree
         url: /api-docs/Braintree
+      - name: Merchant
+        url: /api-docs/Merchant
       - name: Actuator
         url: /api-docs/Actuator
 api:
@@ -75,6 +77,7 @@ api:
     qrpay: 1
     truelayer: 1
     payments: 1
+    merchant: 1
 
 truelayer:
   apiBase: ${TRUELAYER_API_BASE:https://api.truelayer-sandbox.com}
