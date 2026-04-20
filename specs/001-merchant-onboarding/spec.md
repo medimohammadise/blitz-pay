@@ -14,7 +14,7 @@
 
 ### Session 2026-04-19 (product catalog)
 
-- Q: Where should product images be stored? → A: Object storage (S3-compatible); product record holds only the image URL. (FR-032 added)
+- Q: Where should product images be stored? → A: S3-compatible object storage (AWS S3 / MinIO); product record holds only storage keys; API returns pre-signed download URLs; upload is via pre-signed PUT URL. Multiple images per product, ordered. (FR-032, FR-042 updated/added)
 - Q: Should products support a deactivated/archived state, or is simple create/update/delete sufficient? → A: Soft delete — products have an `active` flag; inactive products are hidden from buyers but retained. (FR-033 added)
 - Q: Who can create and manage products for a merchant? → A: Both — merchants manage their own catalog via self-service API; internal admins can override. (FR-029, FR-030 added)
 - Q: Is product unit price always in the merchant's registered currency, or can each product carry its own currency? → A: Product price inherits the merchant's registered currency — no per-product currency field. (FR-031 updated)
@@ -24,9 +24,10 @@
 ### Session 2026-04-19 (merchant location)
 
 - Q: Are latitude and longitude required fields during merchant registration? → A: Optional — coordinates and Place ID can be provided or enriched after registration. (FR-037 added)
-- Q: Where should latitude, longitude, and Google Place ID be stored? → A: Separate `MerchantLocation` entity — new table with FK to `merchant_applications`. (FR-038 added)
-- Q: Should location be updatable after initial registration? → A: Yes, via a dedicated `PUT /v1/merchants/{id}/location` endpoint. (FR-039 added)
+- Q: Where should latitude, longitude, and Google Place ID be stored? → A: Embedded columns on `merchant_applications` (not a separate table); `DOUBLE PRECISION` for coordinates; `geofenceRadiusMeters` added as a required field when setting location. (FR-038 updated)
+- Q: Should location be updatable after initial registration? → A: Yes, via `PUT /v1/merchants/{id}/location` (set/replace) and `DELETE /v1/merchants/{id}/location` (clear). (FR-039 updated)
 - Q: Should Google Maps Place ID be validated against Maps API on save? → A: Store as-is without external validation; a future background job may validate/enrich it. Checklist item added. (FR-040 added)
+- Q: How should mobile clients discover nearby merchants? → A: `GET /v1/merchants/nearby?lat=&lng=&radiusMeters=` using Haversine proximity query. (FR-041 added)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -85,8 +86,8 @@ An internal operations reviewer can evaluate submitted merchant applications, re
 - How does the system handle missing or unreadable supporting materials? The system blocks submission if required materials are missing and flags unreadable materials for correction if discovered during review.
 - How does the system handle a merchant whose application is approved after previously being sent back for corrections? The full history of review decisions and merchant updates remains visible.
 - What happens when a merchant attempts to read or modify a product belonging to a different merchant? The application MUST reject the request with a 403/404 before reaching the database; RLS MUST additionally block the query at the database layer as a secondary defence.
-- What happens when a product image upload to object storage fails? The system MUST reject the product create/update request and return an error; no partial product record is persisted.
-- What happens when a product's image URL becomes unreachable after storage deletion? The system MUST return a null image field rather than a broken URL or error.
+- What happens when a product image upload to object storage fails? The client uploads directly to the pre-signed URL; a failed upload means the storage key is never registered on the product — the product record is unaffected.
+- What happens when a product's storage key no longer exists in object storage? The pre-signed download URL will resolve to a 403/404 from the storage service; the product record is unchanged. Stale key cleanup is a deferred operational concern.
 - What happens when a `PUT /v1/merchants/{id}/location` request supplies an out-of-range latitude (< −90 or > 90) or longitude (< −180 or > 180)? The system MUST reject the request with HTTP 400 and a descriptive validation error; no location record is created or modified.
 - What happens when an active merchant later triggers monitoring concerns? The system records the monitoring event, updates the merchant's oversight status, and supports follow-up review actions without losing the original onboarding history.
 - What happens when a merchant requests access to or correction of personal data during onboarding? The system supports those requests in line with applicable privacy obligations without breaking the compliance record.
@@ -126,15 +127,18 @@ An internal operations reviewer can evaluate submitted merchant applications, re
 - **FR-029**: The system MUST allow an authenticated merchant to create, update, and deactivate products in their own catalog via a self-service API.
 - **FR-030**: The system MUST allow authorized internal admin users to create, update, and deactivate products on behalf of any merchant.
 - **FR-031**: Each product MUST have a name and a unit price expressed as a decimal number (≥ 0) in the merchant's registered currency; zero-price products are permitted to support free or sample offerings.
-- **FR-032**: Each product MAY have an optional image; images MUST be uploaded to an object storage service (S3-compatible) and the product record MUST store only the resulting image URL.
+- **FR-032**: Each product MAY have zero or more images; images MUST be uploaded to an S3-compatible object storage service (AWS S3 in production, MinIO in development); the product record MUST store only the resulting storage keys, never raw URLs; the API MUST return short-lived pre-signed download URLs when serving product data to clients.
 - **FR-033**: Products MUST support soft delete via an `active` flag; inactive products MUST be hidden from buyer-facing views but MUST be retained in the database for record-keeping.
 - **FR-034**: Product unit price MUST NOT carry its own currency field; it is implicitly denominated in the owning merchant's registered currency.
 - **FR-035**: All product-related database tables MUST include `merchant_id` as a non-nullable tenant discriminator column and MUST enforce a foreign key relationship to the merchant record.
 - **FR-036**: All product queries MUST be scoped to the authenticated merchant's `merchant_id` at the repository/service layer (application-level filtering as primary isolation); PostgreSQL Row Level Security policies MUST additionally be applied on product tables as a safety net to prevent cross-tenant data leakage at the database layer.
 - **FR-037**: A merchant MAY optionally provide geographic coordinates (latitude and longitude) and a Google Maps Place ID; none of these fields are required at registration time.
-- **FR-038**: Latitude, longitude, and Google Maps Place ID MUST be stored in a separate `MerchantLocation` entity with a foreign key to `merchant_applications`; latitude and longitude MUST use `DECIMAL(9,6)` precision; Place ID MUST be stored as a nullable `VARCHAR`.
-- **FR-039**: An authenticated merchant or internal admin MUST be able to create or replace the location record via `PUT /v1/merchants/{merchantId}/location`; the endpoint MUST also support removing location data by accepting null values.
+- **FR-038**: Latitude, longitude, geofence radius, and Google Maps Place ID MUST be stored as embedded columns on `merchant_applications` (`DOUBLE PRECISION` for coordinates, `INTEGER` for radius in metres, nullable `VARCHAR(255)` for Place ID); there is no separate location table.
+- **FR-039**: An authenticated merchant or internal admin MUST be able to set or replace the location via `PUT /v1/merchants/{merchantId}/location` and remove it via `DELETE /v1/merchants/{merchantId}/location`; `geofenceRadiusMeters` MUST be provided and MUST be > 0.
 - **FR-040**: The Google Maps Place ID MUST be accepted and stored as-is without real-time validation against the Google Maps API; future enrichment (address, reviews resolution) SHOULD be performed by a background job (tracked as a checklist item).
+- **FR-041**: The system MUST expose `GET /v1/merchants/nearby?lat=&lng=&radiusMeters=` to return merchants within the given radius ordered by ascending distance; this endpoint powers mobile geofence-enter discovery.
+- **FR-042**: The system MUST expose `POST /v1/merchants/{merchantId}/products/{productId}/images/upload-url` to issue short-lived pre-signed S3/MinIO PUT URLs for direct client-to-storage upload; the response MUST include the storage key and expiry timestamp.
+- **FR-043**: The system MUST expose `POST /v1/merchants/{merchantId}/logo/upload-url` to issue a pre-signed PUT URL for direct logo upload; the existing `PUT /v1/merchants/{merchantId}/logo` endpoint continues to register the storage key after upload completes.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -146,8 +150,8 @@ An internal operations reviewer can evaluate submitted merchant applications, re
 - **Supporting Material**: Documents or evidence submitted by the merchant to support verification and approval.
 - **Risk Assessment**: The record of compliance and business risk evaluation used to support onboarding decisions and downstream monitoring.
 - **Monitoring Record**: The post-activation oversight record for an active merchant, including monitoring status, review triggers, outcomes, and follow-up actions.
-- **Product**: A catalog item offered by a merchant, carrying a `merchant_id` tenant discriminator, a name, unit price (decimal ≥ 0 in the merchant's registered currency), an `active` flag for soft delete, and an optional image URL referencing object storage. All queries are tenant-scoped by `merchant_id` at both application and database (RLS) layers.
-- **MerchantLocation**: An optional entity linked 1-to-1 with a `MerchantApplication`, holding `latitude DECIMAL(9,6)`, `longitude DECIMAL(9,6)`, and an optional `googlePlaceId VARCHAR`. Managed via `PUT /v1/merchants/{merchantId}/location`. Place ID enrichment (address, reviews) is deferred to a future background job.
+- **Product**: A catalog item offered by a merchant, carrying a `merchant_id` tenant discriminator, a name, unit price (decimal ≥ 0 in the merchant's registered currency), an `active` flag for soft delete, and an ordered list of image storage keys referencing S3/MinIO. Responses return pre-signed download URLs. All queries are tenant-scoped by `merchant_id` at both application and database (RLS) layers.
+- **MerchantLocation**: Optional location data embedded in `MerchantApplication` — `latitude` and `longitude` (`DOUBLE PRECISION`), `geofenceRadiusMeters` (`INTEGER`, > 0), and an optional `googlePlaceId VARCHAR(255)`. Managed via `PUT /v1/merchants/{merchantId}/location` and `DELETE /v1/merchants/{merchantId}/location`. Powers `GET /v1/merchants/nearby` for geofence-triggered merchant discovery on mobile. Place ID enrichment is deferred to a future background job.
 
 ## Assumptions
 

@@ -1,8 +1,13 @@
 package com.elegant.software.blitzpay.merchant.domain
 
+import jakarta.persistence.CollectionTable
 import jakarta.persistence.Column
+import jakarta.persistence.ElementCollection
 import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OrderColumn
 import jakarta.persistence.Table
 import org.hibernate.annotations.Filter
 import org.hibernate.annotations.FilterDef
@@ -32,9 +37,6 @@ class MerchantProduct(
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 4)
     var unitPrice: BigDecimal,
 
-    @Column(name = "image_url")
-    var imageUrl: String? = null,
-
     @Column(nullable = false)
     var active: Boolean = true,
 
@@ -44,16 +46,24 @@ class MerchantProduct(
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = createdAt
 ) {
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "merchant_product_images",
+        joinColumns = [JoinColumn(name = "product_id")]
+    )
+    @OrderColumn(name = "display_order")
+    @Column(name = "storage_key", length = 512)
+    var images: MutableList<String> = mutableListOf()
     fun deactivate(at: Instant = Instant.now()) {
         active = false
         updatedAt = at
     }
 
-    fun update(name: String, unitPrice: BigDecimal, imageUrl: String?, at: Instant = Instant.now()) {
+    fun update(name: String, unitPrice: BigDecimal, imageUrls: List<String>, at: Instant = Instant.now()) {
         require(unitPrice >= BigDecimal.ZERO) { "unitPrice must be >= 0" }
         this.name = name
         this.unitPrice = unitPrice
-        this.imageUrl = imageUrl
+        this.images = imageUrls.toMutableList()
         this.updatedAt = at
     }
 }

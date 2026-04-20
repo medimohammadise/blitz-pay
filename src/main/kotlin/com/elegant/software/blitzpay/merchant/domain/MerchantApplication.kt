@@ -80,6 +80,9 @@ class MerchantApplication(
     @JoinColumn(name = "monitoring_record_id")
     var monitoringRecord: MonitoringRecord? = null
 
+    @Embedded
+    var location: MerchantLocation? = null
+
     fun registerDirect(activatedAt: Instant = Instant.now()) {
         MerchantOnboardingLifecycle.requireTransition(status, MerchantOnboardingStatus.ACTIVE)
         status = MerchantOnboardingStatus.ACTIVE
@@ -141,6 +144,16 @@ class MerchantApplication(
 
     fun updateLogo(storageKey: String) {
         businessProfile = businessProfile.copy(logoStorageKey = storageKey)
+        touch()
+    }
+
+    fun updateLocation(newLocation: MerchantLocation) {
+        location = newLocation
+        touch()
+    }
+
+    fun clearLocation() {
+        location = null
         touch()
     }
 

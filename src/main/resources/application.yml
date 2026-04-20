@@ -106,6 +106,13 @@ braintree:
   environment: ${BRAINTREE_ENVIRONMENT:sandbox}
 
 blitzpay:
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    region: ${STORAGE_REGION:us-east-1}
+    access-key: ${STORAGE_ACCESS_KEY:minioadmin}
+    secret-key: ${STORAGE_SECRET_KEY:minioadmin}
+    bucket: ${STORAGE_BUCKET:blitzpay}
+    path-style-access: ${STORAGE_PATH_STYLE:true}
   expo:
     access-token: ${EXPO_ACCESS_TOKEN:}
     base-url: ${EXPO_PUSH_URL:https://exp.host/--/api/v2/push/send}

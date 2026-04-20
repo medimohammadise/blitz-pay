@@ -1,9 +1,23 @@
 # API Contract: Merchant Product Catalog
 
 **Feature Branch**: `001-merchant-onboarding`
-**Date**: 2026-04-19
+**Date**: 2026-04-20 (updated)
 **Module**: `merchant`
 **Base path**: `/v1/merchants/{merchantId}/products`
+
+---
+
+## Storage Model
+
+Product images are stored in S3-compatible object storage (MinIO in development, AWS S3 in production).
+The backend never accepts raw image URLs from clients — it accepts **storage keys** (object paths) that the client obtained by first calling the upload-url endpoint.
+
+**Image upload flow:**
+1. `POST /v1/merchants/{merchantId}/products/{productId}/images/upload-url` → `{ storageKey, uploadUrl, expiresAt }`
+2. Client PUTs the binary directly to `uploadUrl` (15-minute TTL, never touches the backend)
+3. Client includes `storageKey` in the `imageStorageKeys` list on create or update
+
+**Image download:** `ProductResponse.imageUrls` contains pre-signed GET URLs resolved at request time (~60-minute TTL). Clients should not cache these permanently; re-fetch the product to get fresh URLs.
 
 ---
 
@@ -23,7 +37,7 @@ Requests where `{merchantId}` does not match the principal's entitlement return 
 
 **`POST /v1/merchants/{merchantId}/products`**
 
-Creates a new active product for the given merchant.
+Creates a new active product for the given merchant. `imageStorageKeys` is an ordered list — index 0 is the primary display image.
 
 #### Request
 
@@ -31,15 +45,18 @@ Creates a new active product for the given merchant.
 {
   "name": "Artisan Coffee Blend 250g",
   "unitPrice": 12.50,
-  "imageUrl": "https://cdn.blitzpay.io/merchant/abc123/products/img1.jpg"
+  "imageStorageKeys": [
+    "merchant/abc123/products/550e8400/images/a1b2c3d4.jpg",
+    "merchant/abc123/products/550e8400/images/e5f6g7h8.jpg"
+  ]
 }
 ```
 
 | Field | Type | Required | Constraints |
 |-------|------|----------|-------------|
-| `name` | string | YES | 1–255 characters |
+| `name` | string | YES | 1–255 characters, not blank |
 | `unitPrice` | number | YES | ≥ 0, up to 4 decimal places |
-| `imageUrl` | string | NO | Valid HTTPS URL, ≤ 2048 characters |
+| `imageStorageKeys` | string[] | NO | Ordered list of S3/MinIO storage keys; empty = no images |
 
 #### Response `201 Created`
 
@@ -49,12 +66,17 @@ Creates a new active product for the given merchant.
   "merchantId": "7b3d9f00-1234-4abc-8765-000000000001",
   "name": "Artisan Coffee Blend 250g",
   "unitPrice": 12.50,
-  "imageUrl": "https://cdn.blitzpay.io/merchant/abc123/products/img1.jpg",
+  "imageUrls": [
+    "https://storage.blitzpay.io/blitzpay/merchant/abc123/products/550e8400/images/a1b2c3d4.jpg?X-Amz-Signature=...",
+    "https://storage.blitzpay.io/blitzpay/merchant/abc123/products/550e8400/images/e5f6g7h8.jpg?X-Amz-Signature=..."
+  ],
   "active": true,
-  "createdAt": "2026-04-19T10:00:00Z",
-  "updatedAt": "2026-04-19T10:00:00Z"
+  "createdAt": "2026-04-20T10:00:00Z",
+  "updatedAt": "2026-04-20T10:00:00Z"
 }
 ```
+
+`imageUrls` are short-lived pre-signed GET URLs (≈60 min). Empty array when no images are set.
 
 #### Error responses
 
@@ -80,12 +102,15 @@ Returns all active products for the merchant. Inactive (soft-deleted) products a
   "products": [
     {
       "productId": "550e8400-e29b-41d4-a716-446655440000",
+      "merchantId": "7b3d9f00-1234-4abc-8765-000000000001",
       "name": "Artisan Coffee Blend 250g",
       "unitPrice": 12.50,
-      "imageUrl": "https://cdn.blitzpay.io/merchant/abc123/products/img1.jpg",
+      "imageUrls": [
+        "https://storage.blitzpay.io/blitzpay/merchant/abc123/products/550e8400/images/a1b2c3d4.jpg?X-Amz-Signature=..."
+      ],
       "active": true,
-      "createdAt": "2026-04-19T10:00:00Z",
-      "updatedAt": "2026-04-19T10:00:00Z"
+      "createdAt": "2026-04-20T10:00:00Z",
+      "updatedAt": "2026-04-20T10:00:00Z"
     }
   ]
 }
@@ -103,18 +128,7 @@ Returns a single product. Returns `404` for both non-existent and inactive (soft
 
 #### Response `200 OK`
 
-```json
-{
-  "productId": "550e8400-e29b-41d4-a716-446655440000",
-  "merchantId": "7b3d9f00-1234-4abc-8765-000000000001",
-  "name": "Artisan Coffee Blend 250g",
-  "unitPrice": 12.50,
-  "imageUrl": "https://cdn.blitzpay.io/merchant/abc123/products/img1.jpg",
-  "active": true,
-  "createdAt": "2026-04-19T10:00:00Z",
-  "updatedAt": "2026-04-19T10:00:00Z"
-}
-```
+Same shape as Create response.
 
 #### Error responses
 
@@ -129,7 +143,7 @@ Returns a single product. Returns `404` for both non-existent and inactive (soft
 
 **`PUT /v1/merchants/{merchantId}/products/{productId}`**
 
-Replaces all mutable fields (name, unitPrice, imageUrl). Passing `null` for `imageUrl` removes the existing image.
+Replaces all mutable fields. `imageStorageKeys` replaces the entire image list — pass `[]` to remove all images.
 
 #### Request
 
@@ -137,7 +151,7 @@ Replaces all mutable fields (name, unitPrice, imageUrl). Passing `null` for `ima
 {
   "name": "Artisan Coffee Blend 500g",
   "unitPrice": 22.00,
-  "imageUrl": null
+  "imageStorageKeys": []
 }
 ```
 
@@ -163,14 +177,42 @@ Sets `active = false`. The product is retained in the database and is no longer 
 
 #### Response `204 No Content`
 
-No body.
-
 #### Error responses
 
 | Status | Condition |
 |--------|-----------|
 | `403 Forbidden` | Principal not entitled |
 | `404 Not Found` | Product not found or already inactive |
+
+---
+
+### 6. Get Pre-signed Image Upload URL
+
+**`POST /v1/merchants/{merchantId}/products/{productId}/images/upload-url`**
+
+Returns a short-lived S3/MinIO PUT URL for direct browser/mobile upload. The returned `storageKey` must be included in the `imageStorageKeys` list on create or update.
+
+#### Request (optional body)
+
+```json
+{
+  "contentType": "image/jpeg"
+}
+```
+
+Omitting the body defaults to `image/jpeg`. Supported values: `image/jpeg`, `image/png`, `image/webp`.
+
+#### Response `200 OK`
+
+```json
+{
+  "storageKey": "merchant/abc123/products/550e8400/images/a1b2c3d4.jpg",
+  "uploadUrl": "https://storage.blitzpay.io/blitzpay/merchant/abc123/products/550e8400/images/a1b2c3d4.jpg?X-Amz-Signature=...",
+  "expiresAt": "2026-04-20T10:15:00Z"
+}
+```
+
+Upload URL expires in 15 minutes. After the PUT completes, include `storageKey` in the product create/update request.
 
 ---
 

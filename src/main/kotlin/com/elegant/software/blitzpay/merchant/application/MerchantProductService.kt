@@ -1,18 +1,19 @@
 package com.elegant.software.blitzpay.merchant.application
 
 import com.elegant.software.blitzpay.merchant.api.CreateProductRequest
+import com.elegant.software.blitzpay.merchant.api.ProductImageUploadUrlResponse
 import com.elegant.software.blitzpay.merchant.api.ProductListResponse
 import com.elegant.software.blitzpay.merchant.api.ProductResponse
 import com.elegant.software.blitzpay.merchant.api.UpdateProductRequest
 import com.elegant.software.blitzpay.merchant.domain.MerchantProduct
 import com.elegant.software.blitzpay.merchant.repository.MerchantApplicationRepository
 import com.elegant.software.blitzpay.merchant.repository.MerchantProductRepository
+import com.elegant.software.blitzpay.storage.StorageService
 import jakarta.persistence.EntityManager
 import org.hibernate.Session
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.util.UUID
 
 @Service
@@ -20,7 +21,8 @@ import java.util.UUID
 class MerchantProductService(
     private val productRepository: MerchantProductRepository,
     private val merchantApplicationRepository: MerchantApplicationRepository,
-    private val entityManager: EntityManager
+    private val entityManager: EntityManager,
+    private val storageService: StorageService
 ) {
     private val log = LoggerFactory.getLogger(MerchantProductService::class.java)
 
@@ -32,9 +34,8 @@ class MerchantProductService(
         val product = MerchantProduct(
             merchantApplicationId = merchantId,
             name = request.name.trim(),
-            unitPrice = request.unitPrice,
-            imageUrl = request.imageUrl
-        )
+            unitPrice = request.unitPrice
+        ).also { it.images = request.imageStorageKeys.toMutableList() }
         val saved = productRepository.save(product)
         log.info("Product created: id={} merchant={}", saved.id, merchantId)
         return saved.toResponse(merchantId)
@@ -66,7 +67,7 @@ class MerchantProductService(
         val product = productRepository.findByIdAndActiveTrue(productId)
             .orElseThrow { NoSuchElementException("Product not found: $productId") }
 
-        product.update(request.name.trim(), request.unitPrice, request.imageUrl)
+        product.update(request.name.trim(), request.unitPrice, request.imageStorageKeys)
         val saved = productRepository.save(product)
         log.info("Product updated: id={} merchant={}", productId, merchantId)
         return saved.toResponse(merchantId)
@@ -97,12 +98,23 @@ class MerchantProductService(
             .executeUpdate()
     }
 
+    fun presignImageUpload(merchantId: UUID, productId: UUID, contentType: String): ProductImageUploadUrlResponse {
+        requireMerchantExists(merchantId)
+        val storageKey = "merchant/$merchantId/products/$productId/images/${UUID.randomUUID()}"
+        val presigned = storageService.presignUpload(storageKey, contentType)
+        return ProductImageUploadUrlResponse(
+            storageKey = presigned.storageKey,
+            uploadUrl = presigned.uploadUrl,
+            expiresAt = presigned.expiresAt
+        )
+    }
+
     private fun MerchantProduct.toResponse(merchantId: UUID) = ProductResponse(
         productId = id,
         merchantId = merchantId,
         name = name,
         unitPrice = unitPrice,
-        imageUrl = imageUrl,
+        imageUrls = images.map { storageService.presignDownload(it) },
         active = active,
         createdAt = createdAt,
         updatedAt = updatedAt

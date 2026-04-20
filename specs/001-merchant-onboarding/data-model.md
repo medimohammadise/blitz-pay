@@ -22,7 +22,9 @@
 
 ## New Entity: `MerchantProduct`
 
-### Table: `blitzpay.merchant_products`
+### Tables
+
+**`blitzpay.merchant_products`** — product record (no image column; images live in a child table)
 
 ```sql
 -- changeset mehdi:20260419-008-merchant-products
@@ -31,7 +33,6 @@ CREATE TABLE blitzpay.merchant_products (
     merchant_application_id UUID           NOT NULL,
     name                    VARCHAR(255)   NOT NULL,
     unit_price              DECIMAL(12, 4) NOT NULL,
-    image_url               VARCHAR(2048),
     active                  BOOLEAN        NOT NULL DEFAULT TRUE,
     created_at              TIMESTAMPTZ    NOT NULL,
     updated_at              TIMESTAMPTZ    NOT NULL,
@@ -43,7 +44,6 @@ CREATE TABLE blitzpay.merchant_products (
 );
 CREATE INDEX ix_merchant_products_merchant ON blitzpay.merchant_products (merchant_application_id);
 CREATE INDEX ix_merchant_products_active   ON blitzpay.merchant_products (merchant_application_id, active);
--- rollback DROP TABLE blitzpay.merchant_products;
 
 -- changeset mehdi:20260419-009-merchant-products-rls
 ALTER TABLE blitzpay.merchant_products ENABLE ROW LEVEL SECURITY;
@@ -53,11 +53,23 @@ CREATE POLICY merchant_tenant_isolation
     USING (
         merchant_application_id = NULLIF(current_setting('app.current_merchant_id', true), '')::uuid
     );
--- rollback DROP POLICY merchant_tenant_isolation ON blitzpay.merchant_products;
---         ALTER TABLE blitzpay.merchant_products DISABLE ROW LEVEL SECURITY;
 ```
 
-### Field descriptions
+**`blitzpay.merchant_product_images`** — ordered image storage keys per product
+
+```sql
+-- changeset mehdi:20260420-011-merchant-product-images
+CREATE TABLE blitzpay.merchant_product_images (
+    product_id    UUID         NOT NULL,
+    storage_key   VARCHAR(512) NOT NULL,
+    display_order INTEGER      NOT NULL DEFAULT 0,
+    CONSTRAINT fk_product_images_product
+        FOREIGN KEY (product_id) REFERENCES blitzpay.merchant_products (id)
+);
+CREATE INDEX ix_product_images_product ON blitzpay.merchant_product_images (product_id);
+```
+
+### Field descriptions — `merchant_products`
 
 | Column | Type | Nullable | Notes |
 |--------|------|----------|-------|
@@ -65,16 +77,23 @@ CREATE POLICY merchant_tenant_isolation
 | `merchant_application_id` | `UUID` | NO | Tenant discriminator; FK → `merchant_applications.id` |
 | `name` | `VARCHAR(255)` | NO | Display name of the product |
 | `unit_price` | `DECIMAL(12,4)` | NO | Price per unit; ≥ 0; zero = free/sample |
-| `image_url` | `VARCHAR(2048)` | YES | HTTPS URL to object storage; null when no image |
 | `active` | `BOOLEAN` | NO | Soft-delete flag; `false` = deactivated, hidden from buyers |
 | `created_at` | `TIMESTAMPTZ` | NO | Set once at insert |
 | `updated_at` | `TIMESTAMPTZ` | NO | Updated on every mutation |
+
+### Field descriptions — `merchant_product_images`
+
+| Column | Type | Nullable | Notes |
+|--------|------|----------|-------|
+| `product_id` | `UUID` | NO | FK → `merchant_products.id` |
+| `storage_key` | `VARCHAR(512)` | NO | S3/MinIO object key; e.g. `merchant/{id}/products/{id}/images/{uuid}.jpg` |
+| `display_order` | `INTEGER` | NO | 0-based ordering; index 0 = primary display image |
 
 ### Constraints
 
 - `unit_price >= 0` enforced by DB check constraint AND application validation
 - `merchant_application_id` is indexed (tenant isolation query path) and compound-indexed with `active` (buyer listing path)
-- No per-product currency column — price is implicitly in the owning merchant's registered currency (`BusinessProfile.operatingCountry` implies the locale currency)
+- No per-product currency column — price is implicitly in the owning merchant's registered currency
 
 ---
 
@@ -89,42 +108,25 @@ CREATE POLICY merchant_tenant_isolation
 @Entity
 @Table(name = "merchant_products", schema = "blitzpay")
 class MerchantProduct(
-    @Id
-    val id: UUID = UUID.randomUUID(),
-
+    @Id val id: UUID = UUID.randomUUID(),
     @Column(name = "merchant_application_id", nullable = false, updatable = false)
     val merchantApplicationId: UUID,
-
-    @Column(nullable = false)
-    var name: String,
-
-    @Column(name = "unit_price", nullable = false, precision = 12, scale = 4)
-    var unitPrice: BigDecimal,
-
-    @Column(name = "image_url")
-    var imageUrl: String? = null,
-
-    @Column(nullable = false)
-    var active: Boolean = true,
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = createdAt
+    @Column(nullable = false) var name: String,
+    @Column(name = "unit_price", nullable = false, precision = 12, scale = 4) var unitPrice: BigDecimal,
+    @Column(nullable = false) var active: Boolean = true,
+    @Column(name = "created_at", nullable = false, updatable = false) val createdAt: Instant = Instant.now(),
+    @Column(name = "updated_at", nullable = false) var updatedAt: Instant = createdAt
 ) {
-    fun deactivate(at: Instant = Instant.now()) {
-        active = false
-        updatedAt = at
-    }
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "merchant_product_images", joinColumns = [JoinColumn(name = "product_id")])
+    @OrderColumn(name = "display_order")
+    @Column(name = "storage_key", length = 512)
+    var images: MutableList<String> = mutableListOf()
 
-    fun update(name: String, unitPrice: BigDecimal, imageUrl: String?, at: Instant = Instant.now()) {
-        require(unitPrice >= BigDecimal.ZERO) { "unitPrice must be >= 0" }
-        this.name = name
-        this.unitPrice = unitPrice
-        this.imageUrl = imageUrl
-        this.updatedAt = at
+    fun update(name: String, unitPrice: BigDecimal, imageUrls: List<String>, at: Instant = Instant.now()) {
+        this.name = name; this.unitPrice = unitPrice; this.images = imageUrls.toMutableList(); this.updatedAt = at
     }
+    fun deactivate(at: Instant = Instant.now()) { active = false; updatedAt = at }
 }
 ```
 
@@ -132,104 +134,46 @@ class MerchantProduct(
 
 ---
 
-## New Entity: `MerchantLocation`
+## Location Fields on `MerchantApplication`
 
-### Table: `blitzpay.merchant_locations`
+Location data is stored as embedded columns directly on `merchant_applications` — there is no separate `merchant_locations` table. This avoids an extra join on the hot path and keeps proximity queries efficient.
+
+### Migration: `20260420-010-merchant-location`
 
 ```sql
--- changeset mehdi:20260419-010-merchant-locations
-CREATE TABLE blitzpay.merchant_locations (
-    id                      UUID           NOT NULL,
-    merchant_application_id UUID           NOT NULL,
-    latitude                DECIMAL(9, 6),
-    longitude               DECIMAL(9, 6),
-    google_place_id         VARCHAR(255),
-    created_at              TIMESTAMPTZ    NOT NULL,
-    updated_at              TIMESTAMPTZ    NOT NULL,
-    CONSTRAINT pk_merchant_locations PRIMARY KEY (id),
-    CONSTRAINT uq_merchant_locations_merchant UNIQUE (merchant_application_id),
-    CONSTRAINT chk_merchant_locations_latitude  CHECK (latitude  IS NULL OR (latitude  >= -90  AND latitude  <= 90)),
-    CONSTRAINT chk_merchant_locations_longitude CHECK (longitude IS NULL OR (longitude >= -180 AND longitude <= 180)),
-    CONSTRAINT chk_merchant_locations_coords_pair
-        CHECK ((latitude IS NULL) = (longitude IS NULL)),
-    CONSTRAINT fk_merchant_locations_application
-        FOREIGN KEY (merchant_application_id)
-        REFERENCES blitzpay.merchant_applications (id)
-);
--- rollback DROP TABLE blitzpay.merchant_locations;
+ALTER TABLE blitzpay.merchant_applications
+    ADD COLUMN latitude           DOUBLE PRECISION,
+    ADD COLUMN longitude          DOUBLE PRECISION,
+    ADD COLUMN geofence_radius_m  INTEGER,
+    ADD COLUMN google_place_id    VARCHAR(255);
+
+CREATE INDEX ix_merchant_applications_location
+    ON blitzpay.merchant_applications (latitude, longitude)
+    WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 ```
 
 ### Field descriptions
 
 | Column | Type | Nullable | Notes |
 |--------|------|----------|-------|
-| `id` | `UUID` | NO | PK, generated by application |
-| `merchant_application_id` | `UUID` | NO | UNIQUE FK → `merchant_applications.id`; enforces 1-to-1 |
-| `latitude` | `DECIMAL(9,6)` | YES | −90 to +90; null when no location set |
-| `longitude` | `DECIMAL(9,6)` | YES | −180 to +180; null when no location set |
+| `latitude` | `DOUBLE PRECISION` | YES | −90 to +90; null = no location set |
+| `longitude` | `DOUBLE PRECISION` | YES | −180 to +180; null = no location set |
+| `geofence_radius_m` | `INTEGER` | YES | Geofence trigger radius in metres; must be > 0 when set |
 | `google_place_id` | `VARCHAR(255)` | YES | Google Maps Place ID; stored as-is; enrichment deferred |
-| `created_at` | `TIMESTAMPTZ` | NO | Set once at insert |
-| `updated_at` | `TIMESTAMPTZ` | NO | Updated on every mutation |
 
-### Constraints
-
-- `latitude` and `longitude` are co-required: both must be set or both must be null (`chk_merchant_locations_coords_pair`)
-- Range checks are enforced at DB level AND application validation layer
-- `merchant_application_id` is UNIQUE — one location record per merchant
-- `google_place_id` is accepted as-is; no real-time Maps API validation
-
-### Kotlin Entity
+### Kotlin Embeddable
 
 ```kotlin
-@Entity
-@Table(name = "merchant_locations", schema = "blitzpay")
-class MerchantLocation(
-    @Id
-    val id: UUID = UUID.randomUUID(),
-
-    @Column(name = "merchant_application_id", nullable = false, unique = true, updatable = false)
-    val merchantApplicationId: UUID,
-
-    @Column(nullable = true, precision = 9, scale = 6)
-    var latitude: BigDecimal? = null,
-
-    @Column(nullable = true, precision = 9, scale = 6)
-    var longitude: BigDecimal? = null,
-
-    @Column(name = "google_place_id")
-    var googlePlaceId: String? = null,
-
-    @Column(name = "created_at", nullable = false, updatable = false)
-    val createdAt: Instant = Instant.now(),
-
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = createdAt
-) {
-    fun update(latitude: BigDecimal?, longitude: BigDecimal?, googlePlaceId: String?, at: Instant = Instant.now()) {
-        require((latitude == null) == (longitude == null)) {
-            "latitude and longitude must both be provided or both be null"
-        }
-        latitude?.let {
-            require(it >= BigDecimal("-90") && it <= BigDecimal("90")) { "latitude must be between -90 and 90" }
-        }
-        longitude?.let {
-            require(it >= BigDecimal("-180") && it <= BigDecimal("180")) { "longitude must be between -180 and 180" }
-        }
-        this.latitude = latitude
-        this.longitude = longitude
-        this.googlePlaceId = googlePlaceId
-        this.updatedAt = at
-    }
-}
+@Embeddable
+data class MerchantLocation(
+    @Column(nullable = false) val latitude: Double,
+    @Column(nullable = false) val longitude: Double,
+    @Column(name = "geofence_radius_m", nullable = false) val geofenceRadiusMeters: Int,
+    @Column(name = "google_place_id") val googlePlaceId: String? = null
+)
 ```
 
-### Repository
-
-```kotlin
-interface MerchantLocationRepository : JpaRepository<MerchantLocation, UUID> {
-    fun findByMerchantApplicationId(merchantApplicationId: UUID): Optional<MerchantLocation>
-}
-```
+Accessed via `MerchantApplication.location: MerchantLocation?`. Set via `updateLocation()`, cleared via `clearLocation()`.
 
 ---
 

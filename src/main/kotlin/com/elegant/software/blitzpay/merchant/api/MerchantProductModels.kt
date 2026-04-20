@@ -7,13 +7,13 @@ import java.util.UUID
 data class CreateProductRequest(
     val name: String,
     val unitPrice: BigDecimal,
-    val imageUrl: String? = null
+    val imageStorageKeys: List<String> = emptyList()
 )
 
 data class UpdateProductRequest(
     val name: String,
     val unitPrice: BigDecimal,
-    val imageUrl: String? = null
+    val imageStorageKeys: List<String> = emptyList()
 )
 
 data class ProductResponse(
@@ -21,10 +21,20 @@ data class ProductResponse(
     val merchantId: UUID,
     val name: String,
     val unitPrice: BigDecimal,
-    val imageUrl: String?,
+    val imageUrls: List<String>,
     val active: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant
+)
+
+data class ProductImageUploadUrlRequest(
+    val contentType: String = "image/jpeg"
+)
+
+data class ProductImageUploadUrlResponse(
+    val storageKey: String,
+    val uploadUrl: String,
+    val expiresAt: Instant
 )
 
 data class ProductListResponse(

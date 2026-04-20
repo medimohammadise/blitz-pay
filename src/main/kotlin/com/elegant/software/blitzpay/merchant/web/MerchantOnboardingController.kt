@@ -7,6 +7,8 @@ import com.elegant.software.blitzpay.merchant.api.MerchantSummary
 import com.elegant.software.blitzpay.merchant.api.RegisterMerchantRequest
 import com.elegant.software.blitzpay.merchant.application.MerchantRegistrationService
 import com.elegant.software.blitzpay.merchant.repository.MerchantApplicationRepository
+import com.elegant.software.blitzpay.storage.PresignedUpload
+import com.elegant.software.blitzpay.storage.StorageService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
@@ -30,7 +32,8 @@ data class CreateMerchantRequest(
 class MerchantOnboardingController(
     private val repository: MerchantApplicationRepository,
     private val gateway: MerchantGateway,
-    private val merchantRegistrationService: MerchantRegistrationService
+    private val merchantRegistrationService: MerchantRegistrationService,
+    private val storageService: StorageService
 ) {
 
     @Operation(summary = "Register a new merchant (directly ACTIVE, duplicate registration number rejected with 409)")
@@ -99,9 +102,20 @@ class MerchantOnboardingController(
     }
 
     @Operation(
+        summary = "Get a pre-signed upload URL for the merchant logo",
+        description = "Returns a short-lived S3/MinIO PUT URL. " +
+            "Flow: call this → upload binary to uploadUrl → call PUT /{id}/logo with the returned storageKey. " +
+            "URL expires in 15 minutes."
+    )
+    @PostMapping("/{id}/logo/upload-url")
+    fun logoUploadUrl(@PathVariable id: UUID): PresignedUpload {
+        val storageKey = "merchant/$id/logo/${UUID.randomUUID()}"
+        return storageService.presignUpload(storageKey, "image/jpeg")
+    }
+
+    @Operation(
         summary = "Set merchant logo",
-        description = "Records the S3 storage key of a logo already uploaded by the client. " +
-                "Expected key format: merchant/{applicationId}/logo.{ext}"
+        description = "Records the S3/MinIO storage key of a logo already uploaded via the upload-url endpoint."
     )
     @PutMapping("/{id}/logo")
     fun setLogo(@PathVariable id: UUID, @RequestBody request: SetLogoRequest): MerchantSummary {
